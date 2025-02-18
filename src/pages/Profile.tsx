@@ -113,4 +113,33 @@ const Profile = () => {
                   <h2 className="text-2xl font-semibold">Password</h2>
                   <p className="text-gray-500 text-sm">Update your password to keep your account secure</p>
                 </div>
-                
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Lock className="w-4 h-4" />
+                  Change Password
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              <h2 className="text-2xl font-semibold mb-6">Interests</h2>
+              <div className="flex flex-wrap gap-2">
+                {interests.map((interest, index) => (
+                  <div
+                    key={index}
+                    className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
+                  >
+                    {interest}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+};
+
+export default Profile;
