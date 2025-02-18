@@ -1,8 +1,10 @@
 
 import { Home, Target, BookOpen, Library, Users, LogOut, User } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export const Navigation = () => {
+  const navigate = useNavigate();
+
   return (
     <nav className="bg-indigo-600 text-white p-4 fixed w-full top-0 z-50">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -40,12 +42,15 @@ export const Navigation = () => {
           </div>
         </div>
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
+          <button 
+            onClick={() => navigate('/profile')} 
+            className="flex items-center space-x-2 hover:text-indigo-100 transition cursor-pointer"
+          >
             <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">
               <User size={20} />
             </div>
             <span className="text-sm">Account</span>
-          </div>
+          </button>
           <button className="flex items-center space-x-1 hover:text-indigo-100 transition">
             <LogOut size={20} />
             <span>Logout</span>
