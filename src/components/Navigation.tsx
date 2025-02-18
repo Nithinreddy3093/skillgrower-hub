@@ -1,9 +1,11 @@
 
 import { Home, Target, BookOpen, Library, Users, LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const Navigation = () => {
   const navigate = useNavigate();
+  const { logout, user } = useAuth();
 
   return (
     <nav className="bg-indigo-600 text-white p-4 fixed w-full top-0 z-50">
@@ -49,9 +51,12 @@ export const Navigation = () => {
             <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">
               <User size={20} />
             </div>
-            <span className="text-sm">Account</span>
+            <span className="text-sm">{user?.name || 'Account'}</span>
           </button>
-          <button className="flex items-center space-x-1 hover:text-indigo-100 transition">
+          <button 
+            onClick={logout}
+            className="flex items-center space-x-1 hover:text-indigo-100 transition"
+          >
             <LogOut size={20} />
             <span>Logout</span>
           </button>
