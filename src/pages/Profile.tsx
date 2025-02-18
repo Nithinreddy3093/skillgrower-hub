@@ -1,22 +1,54 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Mail, Phone, BookOpen, Lock } from "lucide-react";
+import { User, Mail, BookOpen, Lock } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const Profile = () => {
-  const [name, setName] = useState("Alex Johnson");
-  const [email, setEmail] = useState("alex@example.com");
-  const [phone, setPhone] = useState("+1 234 567 8900");
-  const [bio, setBio] = useState("Passionate about learning and technology. Currently focused on web development and UI/UX design.");
-  const [interests] = useState(["Web Development", "UI/UX Design", "Data Science"]);
+  const { user, profile } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || "");
+      setUsername(profile.username || "");
+      setBio(profile.bio || "");
+      setAvatarUrl(profile.avatar_url || "");
+    }
+  }, [profile]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Profile updated successfully!");
+    setLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: user?.id,
+          full_name: fullName,
+          username,
+          bio,
+          avatar_url: avatarUrl,
+          updated_at: new Date().toISOString(),
+        });
+
+      if (error) throw error;
+      toast.success("Profile updated successfully!");
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -42,9 +74,28 @@ const Profile = () => {
                     </div>
                     <Input
                       id="name"
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
                       className="pl-10"
+                      placeholder="Your full name"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2" htmlFor="username">
+                    Username
+                  </label>
+                  <div className="relative">
+                    <div className="absolute left-3 top-3 text-gray-400">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="pl-10"
+                      placeholder="Your username"
                     />
                   </div>
                 </div>
@@ -60,26 +111,9 @@ const Profile = () => {
                     <Input
                       id="email"
                       type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium mb-2" htmlFor="phone">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute left-3 top-3 text-gray-400">
-                      <Phone className="w-5 h-5" />
-                    </div>
-                    <Input
-                      id="phone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="pl-10"
+                      value={user?.email || ""}
+                      readOnly
+                      className="pl-10 bg-gray-50"
                     />
                   </div>
                 </div>
@@ -97,12 +131,13 @@ const Profile = () => {
                       value={bio}
                       onChange={(e) => setBio(e.target.value)}
                       className="pl-10 min-h-[100px]"
+                      placeholder="Tell us about yourself"
                     />
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full">
-                  Save Changes
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? "Saving..." : "Save Changes"}
                 </Button>
               </form>
             </div>
@@ -123,16 +158,16 @@ const Profile = () => {
 
           <div>
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h2 className="text-2xl font-semibold mb-6">Interests</h2>
-              <div className="flex flex-wrap gap-2">
-                {interests.map((interest, index) => (
-                  <div
-                    key={index}
-                    className="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
-                  >
-                    {interest}
-                  </div>
-                ))}
+              <h2 className="text-2xl font-semibold mb-6">Account Status</h2>
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-gray-600">Email verified</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                  <span className="text-sm text-gray-600">Account active</span>
+                </div>
               </div>
             </div>
           </div>

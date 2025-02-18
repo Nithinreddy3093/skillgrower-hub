@@ -2,12 +2,15 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
 
 interface AuthContextType {
   isAuthenticated: boolean;
-  user: any | null;
+  user: User | null;
+  profile: any | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (email: string, password: string, name: string) => Promise<void>;
 }
 
@@ -15,43 +18,92 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<any | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session?.user);
+    });
+
+    // Listen for changes on auth state (sign in, sign out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setUser(session?.user ?? null);
+      setIsAuthenticated(!!session?.user);
+      
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        
+        setProfile(profile);
+      } else {
+        setProfile(null);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
-      // TODO: Implement Supabase login
-      setIsAuthenticated(true);
-      setUser({ email }); // This will be replaced with actual user data
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
       toast.success('Logged in successfully');
       navigate('/profile');
-    } catch (error) {
-      toast.error('Failed to login');
+    } catch (error: any) {
+      toast.error(error.message);
     }
   };
 
-  const logout = () => {
-    // TODO: Implement Supabase logout
-    setIsAuthenticated(false);
-    setUser(null);
-    toast.success('Logged out successfully');
-    navigate('/login');
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      setIsAuthenticated(false);
+      setUser(null);
+      setProfile(null);
+      toast.success('Logged out successfully');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
   };
 
   const register = async (email: string, password: string, name: string) => {
     try {
-      // TODO: Implement Supabase registration
-      setIsAuthenticated(true);
-      setUser({ email, name });
-      toast.success('Registration successful');
-      navigate('/profile');
-    } catch (error) {
-      toast.error('Failed to register');
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: name,
+          },
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success('Registration successful! Please check your email to confirm your account.');
+      navigate('/login');
+    } catch (error: any) {
+      toast.error(error.message);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ isAuthenticated, user, login, logout, register }}>
+    <AuthContext.Provider value={{ isAuthenticated, user, profile, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   );

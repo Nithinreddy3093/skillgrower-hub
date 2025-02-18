@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import Journal from "./pages/Journal";
@@ -25,12 +26,54 @@ const App = () => (
           <Sonner />
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/goals" element={<Goals />} />
-            <Route path="/journal" element={<Journal />} />
-            <Route path="/resources" element={<Resources />} />
-            <Route path="/collaborate" element={<Collaborate />} />
-            <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Index />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/goals"
+              element={
+                <ProtectedRoute>
+                  <Goals />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/journal"
+              element={
+                <ProtectedRoute>
+                  <Journal />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/resources"
+              element={
+                <ProtectedRoute>
+                  <Resources />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/collaborate"
+              element={
+                <ProtectedRoute>
+                  <Collaborate />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </TooltipProvider>
