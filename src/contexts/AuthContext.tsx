@@ -22,11 +22,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<any | null>(null);
   const navigate = useNavigate();
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) throw error;
+
+      if (!profile) {
+        // Create profile if it doesn't exist
+        const { data: newProfile, error: createError } = await supabase
+          .from('profiles')
+          .insert([{ 
+            id: userId,
+            full_name: user?.user_metadata?.full_name || '',
+          }])
+          .select()
+          .single();
+
+        if (createError) throw createError;
+        setProfile(newProfile);
+      } else {
+        setProfile(profile);
+      }
+    } catch (error: any) {
+      console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile');
+    }
+  };
+
   useEffect(() => {
     // Check active sessions and sets the user
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setIsAuthenticated(!!session?.user);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      }
     });
 
     // Listen for changes on auth state (sign in, sign out, etc.)
@@ -35,13 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAuthenticated(!!session?.user);
       
       if (session?.user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        setProfile(profile);
+        await fetchProfile(session.user.id);
       } else {
         setProfile(null);
       }
