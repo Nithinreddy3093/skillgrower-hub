@@ -13,6 +13,7 @@ import Resources from "./pages/Resources";
 import Collaborate from "./pages/Collaborate";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Sonner />
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route
               path="/"
               element={
