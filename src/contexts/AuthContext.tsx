@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -83,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -91,17 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Login error:', error);
+        if (error.message.includes('Email not confirmed')) {
+          throw new Error('Please confirm your email address before logging in. Check your inbox for the confirmation link.');
+        }
         if (error.message.includes('Invalid login credentials')) {
           throw new Error('Invalid email or password. Please try again or register if you don\'t have an account.');
         }
-        throw new Error(error.message);
+        throw error;
       }
 
       if (!data?.user) {
         throw new Error('No user data returned');
       }
 
-      console.log('Login successful:', data.user);
       setUser(data.user);
       setIsAuthenticated(true);
       await fetchProfile(data.user.id);
@@ -109,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate('/profile');
     } catch (error: any) {
       console.error('Login error:', error);
-      toast.error(error.message || 'Invalid login credentials');
+      toast.error(error.message);
       throw error;
     }
   };
