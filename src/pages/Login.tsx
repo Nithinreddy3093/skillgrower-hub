@@ -14,12 +14,12 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    if (isLoading) return;
     
+    setIsLoading(true);
     try {
       await login(email, password);
     } catch (error) {
-      // Reset password field on error
       setPassword("");
     } finally {
       setIsLoading(false);

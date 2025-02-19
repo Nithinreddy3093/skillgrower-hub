@@ -81,17 +81,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      toast.success('Logged in successfully');
-      navigate('/profile');
+      if (data?.user) {
+        setUser(data.user);
+        setIsAuthenticated(true);
+        toast.success('Logged in successfully');
+        navigate('/profile');
+      }
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Login error:', error);
+      toast.error(error.message || 'Invalid login credentials');
+      throw error; // Re-throw the error so the component can handle loading state
     }
   };
 
@@ -107,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate('/login');
     } catch (error: any) {
       toast.error(error.message);
+      throw error;
     }
   };
 
@@ -128,6 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       navigate('/login');
     } catch (error: any) {
       toast.error(error.message);
+      throw error;
     }
   };
 
