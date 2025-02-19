@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     initializeAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('Auth state changed:', event, session);
       if (event === 'SIGNED_IN' && session?.user) {
         setUser(session.user);
         setIsAuthenticated(true);
@@ -82,6 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
+      console.log('Attempting login for:', email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -89,6 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error('Login error:', error);
+        if (error.message.includes('Invalid login credentials')) {
+          throw new Error('Invalid email or password. Please try again or register if you don\'t have an account.');
+        }
         throw new Error(error.message);
       }
 
@@ -96,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('No user data returned');
       }
 
+      console.log('Login successful:', data.user);
       setUser(data.user);
       setIsAuthenticated(true);
       await fetchProfile(data.user.id);
@@ -127,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const register = async (email: string, password: string, name: string) => {
     try {
+      console.log('Attempting registration for:', email);
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -143,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Registration failed');
       }
 
+      console.log('Registration successful:', data.user);
       toast.success('Registration successful! Please check your email to confirm your account.');
       navigate('/login');
     } catch (error: any) {
