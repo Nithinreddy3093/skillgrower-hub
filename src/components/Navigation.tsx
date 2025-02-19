@@ -51,7 +51,7 @@ export const Navigation = () => {
             <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">
               <User size={20} />
             </div>
-            <span className="text-sm">{user?.name || 'Account'}</span>
+            <span className="text-sm">{user?.user_metadata?.full_name || 'Account'}</span>
           </button>
           <button 
             onClick={logout}
