@@ -33,7 +33,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (error) throw error;
 
       if (!profile) {
-        // Create profile if it doesn't exist
         const { data: newProfile, error: createError } = await supabase
           .from('profiles')
           .insert([{ 
@@ -55,23 +54,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsAuthenticated(!!session?.user);
+    const initializeAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
-        fetchProfile(session.user.id);
-      }
-    });
-
-    // Listen for changes on auth state (sign in, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setUser(session?.user ?? null);
-      setIsAuthenticated(!!session?.user);
-      
-      if (session?.user) {
+        setUser(session.user);
+        setIsAuthenticated(true);
         await fetchProfile(session.user.id);
-      } else {
+      }
+    };
+
+    initializeAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        setUser(session.user);
+        setIsAuthenticated(true);
+        await fetchProfile(session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsAuthenticated(false);
         setProfile(null);
       }
     });
@@ -87,19 +88,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (error) {
-        throw error;
+        console.error('Login error:', error);
+        throw new Error(error.message);
       }
 
-      if (data?.user) {
-        setUser(data.user);
-        setIsAuthenticated(true);
-        toast.success('Logged in successfully');
-        navigate('/profile');
+      if (!data?.user) {
+        throw new Error('No user data returned');
       }
+
+      setUser(data.user);
+      setIsAuthenticated(true);
+      await fetchProfile(data.user.id);
+      toast.success('Logged in successfully');
+      navigate('/profile');
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message || 'Invalid login credentials');
-      throw error; // Re-throw the error so the component can handle loading state
+      throw error;
     }
   };
 
@@ -108,20 +113,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      setIsAuthenticated(false);
       setUser(null);
+      setIsAuthenticated(false);
       setProfile(null);
       toast.success('Logged out successfully');
       navigate('/login');
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Logout error:', error);
+      toast.error(error.message || 'Error during logout');
       throw error;
     }
   };
 
   const register = async (email: string, password: string, name: string) => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -133,10 +139,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) throw error;
 
+      if (!data?.user) {
+        throw new Error('Registration failed');
+      }
+
       toast.success('Registration successful! Please check your email to confirm your account.');
       navigate('/login');
     } catch (error: any) {
-      toast.error(error.message);
+      console.error('Registration error:', error);
+      toast.error(error.message || 'Registration failed');
       throw error;
     }
   };
