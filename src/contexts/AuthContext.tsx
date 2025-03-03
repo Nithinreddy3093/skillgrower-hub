@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -19,6 +20,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   const fetchProfile = async (userId: string) => {
@@ -54,11 +56,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        setUser(session.user);
-        setIsAuthenticated(true);
-        await fetchProfile(session.user.id);
+      try {
+        setLoading(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          setUser(session.user);
+          setIsAuthenticated(true);
+          await fetchProfile(session.user.id);
+        }
+      } catch (error) {
+        console.error('Auth initialization error:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -70,6 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session.user);
         setIsAuthenticated(true);
         await fetchProfile(session.user.id);
+        navigate('/profile');
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
         setIsAuthenticated(false);
@@ -78,7 +88,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [navigate]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -102,11 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('No user data returned');
       }
 
-      setUser(data.user);
-      setIsAuthenticated(true);
-      await fetchProfile(data.user.id);
+      // Auth state change listener will handle session update and navigation
       toast.success('Logged in successfully');
-      navigate('/profile');
     } catch (error: any) {
       console.error('Login error:', error);
       toast.error(error.message);
