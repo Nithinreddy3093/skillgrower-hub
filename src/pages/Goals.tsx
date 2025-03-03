@@ -19,6 +19,7 @@ interface Goal {
   description: string;
   progress: number;
   user_id: string;
+  created_at: string;
 }
 
 const Goals = () => {
@@ -50,7 +51,14 @@ const Goals = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setGoals(data || []);
+      
+      // Type assertion to ensure data matches our Goal type
+      const typedData = (data || []).map(item => ({
+        ...item,
+        category: item.category as "academic" | "soft"
+      })) as Goal[];
+      
+      setGoals(typedData);
     } catch (error: any) {
       console.error("Error fetching goals:", error);
       toast.error("Failed to load goals");
@@ -89,9 +97,14 @@ const Goals = () => {
 
       if (error) throw error;
 
-      // Add the new goal to the list
+      // Add the new goal to the list with proper type assertion
       if (data && data.length > 0) {
-        setGoals((prev) => [data[0], ...prev]);
+        const newGoal = {
+          ...data[0],
+          category: data[0].category as "academic" | "soft"
+        } as Goal;
+        
+        setGoals((prev) => [newGoal, ...prev]);
         toast.success("Goal created successfully!");
         
         // Reset form

@@ -15,6 +15,7 @@ type JournalEntry = {
   mood: "happy" | "neutral" | "sad";
   skills: string[];
   created_at: string;
+  user_id: string;
 };
 
 const Journal = () => {
@@ -53,7 +54,14 @@ const Journal = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setJournalEntries(data || []);
+      
+      // Type assertion to ensure data matches our JournalEntry type
+      const typedData = (data || []).map(item => ({
+        ...item,
+        mood: item.mood as "happy" | "neutral" | "sad"
+      })) as JournalEntry[];
+      
+      setJournalEntries(typedData);
     } catch (error: any) {
       console.error("Error fetching journal entries:", error);
       toast.error("Failed to load journal entries");
@@ -99,7 +107,13 @@ const Journal = () => {
       if (error) throw error;
 
       if (data && data.length > 0) {
-        setJournalEntries(prev => [data[0], ...prev]);
+        // Type assertion to ensure new entry matches our JournalEntry type
+        const newEntry = {
+          ...data[0],
+          mood: data[0].mood as "happy" | "neutral" | "sad"
+        } as JournalEntry;
+        
+        setJournalEntries(prev => [newEntry, ...prev]);
         toast.success("Journal entry saved successfully!");
 
         // Reset form
