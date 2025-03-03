@@ -1,15 +1,30 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Smile, Meh, Frown } from "lucide-react";
+import { Smile, Meh, Frown, Loader } from "lucide-react";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { format } from "date-fns";
+
+type JournalEntry = {
+  id: string;
+  content: string;
+  mood: "happy" | "neutral" | "sad";
+  skills: string[];
+  created_at: string;
+};
 
 const Journal = () => {
+  const { user } = useAuth();
   const [mood, setMood] = useState<"happy" | "neutral" | "sad">();
   const [entry, setEntry] = useState("");
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const skills = [
     "Critical Thinking",
@@ -20,6 +35,33 @@ const Journal = () => {
     "Leadership"
   ];
 
+  useEffect(() => {
+    if (user) {
+      fetchJournalEntries();
+    }
+  }, [user]);
+
+  const fetchJournalEntries = async () => {
+    if (!user) return;
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setJournalEntries(data || []);
+    } catch (error: any) {
+      console.error("Error fetching journal entries:", error);
+      toast.error("Failed to load journal entries");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const toggleSkill = (skill: string) => {
     setSelectedSkills(prev =>
       prev.includes(skill)
@@ -28,33 +70,55 @@ const Journal = () => {
     );
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) {
+      toast.error("You must be logged in to save journal entries");
+      return;
+    }
+
     if (!mood || !entry || selectedSkills.length === 0) {
       toast.error("Please fill in all required fields");
       return;
     }
     
-    toast.success("Journal entry saved successfully!");
-    setMood(undefined);
-    setEntry("");
-    setSelectedSkills([]);
+    setIsSubmitting(true);
+    try {
+      const { data, error } = await supabase
+        .from("journal_entries")
+        .insert([
+          {
+            user_id: user.id,
+            content: entry,
+            mood: mood,
+            skills: selectedSkills
+          }
+        ])
+        .select();
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        setJournalEntries(prev => [data[0], ...prev]);
+        toast.success("Journal entry saved successfully!");
+
+        // Reset form
+        setMood(undefined);
+        setEntry("");
+        setSelectedSkills([]);
+      }
+    } catch (error: any) {
+      console.error("Error saving journal entry:", error);
+      toast.error("Failed to save journal entry: " + error.message);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const recentEntries = [
-    {
-      date: "Tuesday, February 18, 2025",
-      content: "Today I made significant progress in my React studies. I learned about hooks and implemented them in my project. The concepts are becoming clearer, but I still need more practice with useEffect.",
-      mood: "happy",
-      skills: ["Critical Thinking", "Problem Solving"]
-    },
-    {
-      date: "Monday, February 17, 2025",
-      content: "Struggled with some complex algorithms today. While it was challenging, I learned a lot about different problem-solving approaches. Need to review time complexity concepts.",
-      mood: "sad",
-      skills: ["Problem Solving", "Data Analysis"]
-    }
-  ];
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return format(date, "EEEE, MMMM d, yyyy");
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -78,6 +142,7 @@ const Journal = () => {
                     variant={mood === "happy" ? "default" : "outline"}
                     onClick={() => setMood("happy")}
                     className="flex-1"
+                    disabled={isSubmitting}
                   >
                     <Smile className="mr-2" /> Good
                   </Button>
@@ -86,6 +151,7 @@ const Journal = () => {
                     variant={mood === "neutral" ? "default" : "outline"}
                     onClick={() => setMood("neutral")}
                     className="flex-1"
+                    disabled={isSubmitting}
                   >
                     <Meh className="mr-2" /> Okay
                   </Button>
@@ -94,6 +160,7 @@ const Journal = () => {
                     variant={mood === "sad" ? "default" : "outline"}
                     onClick={() => setMood("sad")}
                     className="flex-1"
+                    disabled={isSubmitting}
                   >
                     <Frown className="mr-2" /> Challenging
                   </Button>
@@ -110,6 +177,7 @@ const Journal = () => {
                   value={entry}
                   onChange={(e) => setEntry(e.target.value)}
                   rows={6}
+                  disabled={isSubmitting}
                 />
               </div>
 
@@ -125,6 +193,7 @@ const Journal = () => {
                       variant={selectedSkills.includes(skill) ? "default" : "outline"}
                       onClick={() => toggleSkill(skill)}
                       size="sm"
+                      disabled={isSubmitting}
                     >
                       {skill}
                     </Button>
@@ -132,37 +201,53 @@ const Journal = () => {
                 </div>
               </div>
 
-              <Button type="submit" className="w-full">
-                Save Journal Entry
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader className="mr-2 h-4 w-4 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  "Save Journal Entry"
+                )}
               </Button>
             </form>
           </div>
 
           <div>
             <h2 className="text-2xl font-semibold mb-6">Recent Entries</h2>
-            <div className="space-y-6">
-              {recentEntries.map((entry, index) => (
-                <div key={index} className="bg-white rounded-lg p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-gray-500">{entry.date}</span>
-                    {entry.mood === "happy" && <Smile className="text-green-500" />}
-                    {entry.mood === "neutral" && <Meh className="text-yellow-500" />}
-                    {entry.mood === "sad" && <Frown className="text-red-500" />}
+            {isLoading ? (
+              <div className="flex justify-center items-center h-40">
+                <Loader className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : journalEntries.length === 0 ? (
+              <div className="bg-white rounded-lg p-6 shadow-sm text-center">
+                <p className="text-gray-500">No journal entries yet. Start reflecting on your learning journey!</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {journalEntries.map((entry) => (
+                  <div key={entry.id} className="bg-white rounded-lg p-6 shadow-sm">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-gray-500">{formatDate(entry.created_at)}</span>
+                      {entry.mood === "happy" && <Smile className="text-green-500" />}
+                      {entry.mood === "neutral" && <Meh className="text-yellow-500" />}
+                      {entry.mood === "sad" && <Frown className="text-red-500" />}
+                    </div>
+                    <p className="text-gray-700 mb-4">{entry.content}</p>
+                    <div className="flex flex-wrap gap-2">
+                      {entry.skills.map((skill) => (
+                        <span
+                          key={skill}
+                          className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <p className="text-gray-700 mb-4">{entry.content}</p>
-                  <div className="flex flex-wrap gap-2">
-                    {entry.skills.map((skill) => (
-                      <span
-                        key={skill}
-                        className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
