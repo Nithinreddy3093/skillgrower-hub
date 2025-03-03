@@ -18,6 +18,7 @@ interface Goal {
   target_date: string;
   description: string;
   progress: number;
+  user_id: string;
 }
 
 const Goals = () => {
@@ -30,17 +31,22 @@ const Goals = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch goals on component mount
+  // Fetch goals on component mount and when user changes
   useEffect(() => {
-    fetchGoals();
-  }, []);
+    if (user) {
+      fetchGoals();
+    }
+  }, [user]);
 
   const fetchGoals = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from("goals")
         .select("*")
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -60,6 +66,11 @@ const Goals = () => {
       return;
     }
 
+    if (!user) {
+      toast.error("You must be logged in to create goals");
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { data, error } = await supabase
@@ -70,25 +81,28 @@ const Goals = () => {
             category,
             target_date: targetDate.toISOString().split("T")[0],
             description,
-            user_id: user?.id,
+            user_id: user.id,
+            progress: 0
           },
         ])
-        .select()
-        .single();
+        .select();
 
       if (error) throw error;
 
-      setGoals((prev) => [data, ...prev]);
-      toast.success("Goal created successfully!");
-      
-      // Reset form
-      setGoalName("");
-      setCategory("academic");
-      setTargetDate(undefined);
-      setDescription("");
+      // Add the new goal to the list
+      if (data && data.length > 0) {
+        setGoals((prev) => [data[0], ...prev]);
+        toast.success("Goal created successfully!");
+        
+        // Reset form
+        setGoalName("");
+        setCategory("academic");
+        setTargetDate(undefined);
+        setDescription("");
+      }
     } catch (error: any) {
       console.error("Error creating goal:", error);
-      toast.error("Failed to create goal");
+      toast.error("Failed to create goal: " + error.message);
     } finally {
       setIsSubmitting(false);
     }
