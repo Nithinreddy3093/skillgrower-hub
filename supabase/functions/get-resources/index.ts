@@ -1,6 +1,5 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { load } from "https://esm.sh/kagglehub";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -14,12 +13,10 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Fetching Kaggle dataset...");
+    console.log("Fetching resources data...");
     
-    // Convert the dataset to a JSON object
-    // Note: In a Deno environment we can't use pandas directly, so we'll
-    // simulate the loading with a simplified approach for this demo
-    const resourcesData = await fetchKaggleDataset();
+    // Get resources data
+    const resourcesData = await fetchResourcesData();
     
     return new Response(
       JSON.stringify({ 
@@ -34,11 +31,11 @@ serve(async (req) => {
       }
     );
   } catch (error) {
-    console.error("Error fetching Kaggle dataset:", error);
+    console.error("Error fetching resources data:", error);
     return new Response(
       JSON.stringify({ 
         error: error.message,
-        message: "Failed to fetch Kaggle dataset" 
+        message: "Failed to fetch resources data" 
       }),
       { 
         status: 500,
@@ -51,9 +48,9 @@ serve(async (req) => {
   }
 });
 
-// This is a simplified mock function that would normally use KaggleDatasetAdapter.PANDAS
-// In production, you would integrate with the actual Kaggle API
-async function fetchKaggleDataset() {
+// This function simulates fetching data from a Kaggle dataset
+// In production, you would integrate with the actual Kaggle API or use another data source
+async function fetchResourcesData() {
   // For demo purposes, returning a subset of mock data based on the dataset structure
   return [
     {
@@ -119,6 +116,45 @@ async function fetchKaggleDataset() {
       author: "Jennifer Widom",
       date_published: "2023-03-15",
       rating: 4.5,
+      language: "English"
+    },
+    {
+      id: 6,
+      title: "Docker and Kubernetes Fundamentals",
+      description: "Master containerization and orchestration technologies",
+      url: "https://example.com/docker-k8s",
+      type: "course",
+      difficulty: "intermediate",
+      tags: ["docker", "kubernetes", "devops", "containers"],
+      author: "Kelsey Hightower",
+      date_published: "2023-04-10",
+      rating: 4.9,
+      language: "English"
+    },
+    {
+      id: 7,
+      title: "JavaScript: The Good Parts",
+      description: "Focus on the best features of JavaScript",
+      url: "https://example.com/js-good-parts",
+      type: "book",
+      difficulty: "intermediate",
+      tags: ["javascript", "programming", "web development"],
+      author: "Douglas Crockford",
+      date_published: "2022-09-12",
+      rating: 4.7,
+      language: "English"
+    },
+    {
+      id: 8,
+      title: "Introduction to Cybersecurity",
+      description: "Learn the fundamentals of keeping systems and data secure",
+      url: "https://example.com/cybersecurity-intro",
+      type: "video",
+      difficulty: "beginner",
+      tags: ["cybersecurity", "security", "networking"],
+      author: "Bruce Schneier",
+      date_published: "2023-02-05",
+      rating: 4.4,
       language: "English"
     }
   ];
