@@ -48,6 +48,55 @@ const Goals = () => {
     }
   };
 
+  // Subscribe to real-time updates for goals
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('goals-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'goals',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Goals change received:', payload);
+          
+          // Handle different types of changes
+          if (payload.eventType === 'INSERT') {
+            const newGoal = {
+              ...payload.new,
+              category: payload.new.category as "academic" | "soft"
+            } as Goal;
+            setGoals(current => [newGoal, ...current]);
+          } 
+          else if (payload.eventType === 'UPDATE') {
+            const updatedGoal = {
+              ...payload.new,
+              category: payload.new.category as "academic" | "soft"
+            } as Goal;
+            setGoals(current => 
+              current.map(goal => goal.id === updatedGoal.id ? updatedGoal : goal)
+            );
+          }
+          else if (payload.eventType === 'DELETE') {
+            setGoals(current => 
+              current.filter(goal => goal.id !== payload.old.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleGoalCreated = (newGoal: Goal) => {
     setGoals((prev) => [newGoal, ...prev]);
   };
@@ -63,7 +112,7 @@ const Goals = () => {
 
       if (error) throw error;
 
-      setGoals((prev) => prev.filter((goal) => goal.id !== goalId));
+      // The real-time subscription will handle removing the goal from the state
       toast.success("Goal deleted successfully!");
     } catch (error: any) {
       console.error("Error deleting goal:", error);

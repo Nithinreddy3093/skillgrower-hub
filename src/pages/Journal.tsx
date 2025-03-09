@@ -47,6 +47,55 @@ const Journal = () => {
     }
   };
 
+  // Subscribe to real-time updates for journal entries
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('journal-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'journal_entries',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Journal entry change received:', payload);
+          
+          // Handle different types of changes
+          if (payload.eventType === 'INSERT') {
+            const newEntry = {
+              ...payload.new,
+              mood: payload.new.mood as "happy" | "neutral" | "sad"
+            } as JournalEntry;
+            setJournalEntries(current => [newEntry, ...current]);
+          }
+          else if (payload.eventType === 'UPDATE') {
+            const updatedEntry = {
+              ...payload.new,
+              mood: payload.new.mood as "happy" | "neutral" | "sad"
+            } as JournalEntry;
+            setJournalEntries(current => 
+              current.map(entry => entry.id === updatedEntry.id ? updatedEntry : entry)
+            );
+          }
+          else if (payload.eventType === 'DELETE') {
+            setJournalEntries(current => 
+              current.filter(entry => entry.id !== payload.old.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription when component unmounts
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const handleEntryCreated = (newEntry: JournalEntry) => {
     setJournalEntries(prev => [newEntry, ...prev]);
   };
