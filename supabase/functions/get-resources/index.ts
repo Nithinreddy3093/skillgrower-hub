@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Simple in-memory cache with 5-minute expiration
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
+let resourcesCache = {
+  data: null,
+  timestamp: 0
+};
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -13,20 +20,82 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Fetching resources data...");
+    const url = new URL(req.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '12');
+    const search = url.searchParams.get('search') || '';
+    const type = url.searchParams.get('type') || '';
+    const difficulty = url.searchParams.get('difficulty') || '';
+    const category = url.searchParams.get('category') || '';
+
+    console.log(`Fetching resources with params: page=${page}, limit=${limit}, search=${search}, type=${type}, difficulty=${difficulty}, category=${category}`);
     
-    // Get resources data
-    const resourcesData = await fetchResourcesData();
+    // Check if we have valid cached data
+    const now = Date.now();
+    if (!resourcesCache.data || now - resourcesCache.timestamp > CACHE_EXPIRY) {
+      console.log("Cache miss, fetching fresh data...");
+      resourcesCache.data = await fetchResourcesData();
+      resourcesCache.timestamp = now;
+    } else {
+      console.log("Using cached data...");
+    }
+    
+    // Apply filters to cached data
+    let filteredData = [...resourcesCache.data];
+    
+    // Apply search filter
+    if (search) {
+      const query = search.toLowerCase();
+      filteredData = filteredData.filter(
+        resource => 
+          resource.title.toLowerCase().includes(query) || 
+          resource.description.toLowerCase().includes(query) ||
+          (resource.author && resource.author.toLowerCase().includes(query)) ||
+          (resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(query)))
+      );
+    }
+    
+    // Apply type filter
+    if (type && type !== 'all') {
+      filteredData = filteredData.filter(resource => resource.type === type);
+    }
+    
+    // Apply difficulty filter
+    if (difficulty && difficulty !== 'all') {
+      filteredData = filteredData.filter(resource => resource.difficulty === difficulty);
+    }
+    
+    // Apply category/tag filter
+    if (category && category !== 'all') {
+      filteredData = filteredData.filter(
+        resource => resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
+      );
+    }
+    
+    // Get total count for pagination info
+    const totalCount = filteredData.length;
+    
+    // Apply pagination
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedData = filteredData.slice(startIndex, endIndex);
     
     return new Response(
       JSON.stringify({ 
-        data: resourcesData,
+        data: paginatedData,
+        pagination: {
+          total: totalCount,
+          page: page,
+          limit: limit,
+          totalPages: Math.ceil(totalCount / limit)
+        },
         message: "Successfully fetched resources"
       }),
       { 
         headers: { 
           ...corsHeaders,
-          "Content-Type": "application/json" 
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=300" // Allow browser caching for 5 minutes
         } 
       }
     );

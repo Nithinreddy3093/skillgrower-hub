@@ -3,9 +3,10 @@ import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Book, Video, FileText, Heart, Bookmark, Server, Filter, Search } from "lucide-react";
+import { Book, Video, FileText, Heart, Bookmark, Server, Filter, Search, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -39,6 +40,14 @@ interface Resource {
   saved?: boolean;
 }
 
+// Pagination type
+interface Pagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
 const Resources = () => {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
@@ -46,26 +55,59 @@ const Resources = () => {
   const [difficulty, setDifficulty] = useState("all");
   const [category, setCategory] = useState("all");
   const [resources, setResources] = useState<Resource[]>([]);
-  const [filteredResources, setFilteredResources] = useState<Resource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState<Pagination>({
+    total: 0,
+    page: 1,
+    limit: 12,
+    totalPages: 0
+  });
+  
+  // Debounced search
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 500); // 500ms delay
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  // Fetch resources from the API
+  // Fetch resources from the API with pagination and filtering
   useEffect(() => {
     async function fetchResources() {
-      setIsLoading(true);
+      if (isInitialLoad) {
+        setIsLoading(true);
+      }
       setError(null);
       
       try {
-        const { data, error } = await supabase.functions.invoke('get-resources');
+        // Construct query parameters
+        const params = new URLSearchParams({
+          page: pagination.page.toString(),
+          limit: pagination.limit.toString()
+        });
+        
+        if (debouncedSearch) params.set('search', debouncedSearch);
+        if (type !== 'all') params.set('type', type);
+        if (difficulty !== 'all') params.set('difficulty', difficulty);
+        if (category !== 'all') params.set('category', category);
+        
+        const { data, error } = await supabase.functions.invoke(
+          'get-resources',
+          { query: params }
+        );
         
         if (error) {
           throw new Error(error.message);
         }
         
         setResources(data.data);
-        setFilteredResources(data.data);
-      } catch (err) {
+        setPagination(data.pagination);
+      } catch (err: any) {
         console.error("Error fetching resources:", err);
         setError("Failed to load resources. Please try again later.");
         toast({
@@ -75,49 +117,19 @@ const Resources = () => {
         });
       } finally {
         setIsLoading(false);
+        setIsInitialLoad(false);
       }
     }
     
     fetchResources();
-  }, [toast]);
+  }, [debouncedSearch, type, difficulty, category, pagination.page, pagination.limit, toast]);
 
-  // Filter resources based on search and filter criteria
-  useEffect(() => {
-    if (resources.length === 0) return;
-    
-    let filtered = [...resources];
-    
-    // Apply search filter
-    if (searchQuery) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(
-        resource => 
-          resource.title.toLowerCase().includes(query) || 
-          resource.description.toLowerCase().includes(query) ||
-          (resource.author && resource.author.toLowerCase().includes(query)) ||
-          (resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(query)))
-      );
-    }
-    
-    // Apply type filter
-    if (type !== "all") {
-      filtered = filtered.filter(resource => resource.type === type);
-    }
-    
-    // Apply difficulty filter
-    if (difficulty !== "all") {
-      filtered = filtered.filter(resource => resource.difficulty === difficulty);
-    }
-    
-    // Apply category/tag filter
-    if (category !== "all") {
-      filtered = filtered.filter(
-        resource => resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-      );
-    }
-    
-    setFilteredResources(filtered);
-  }, [searchQuery, type, difficulty, category, resources]);
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > pagination.totalPages) return;
+    setPagination(prev => ({ ...prev, page: newPage }));
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Get icon based on resource type
   const getIcon = (type: string) => {
@@ -168,6 +180,58 @@ const Resources = () => {
   // Handle view resource action
   const handleViewResource = (url: string) => {
     window.open(url, '_blank');
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery('');
+    setType('all');
+    setDifficulty('all');
+    setCategory('all');
+    setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Render pagination controls
+  const renderPagination = () => {
+    if (pagination.totalPages <= 1) return null;
+    
+    return (
+      <div className="flex items-center justify-center space-x-2 mt-8">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => handlePageChange(pagination.page - 1)}
+          disabled={pagination.page === 1}
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Previous
+        </Button>
+        <div className="text-sm text-gray-600">
+          Page {pagination.page} of {pagination.totalPages}
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => handlePageChange(pagination.page + 1)}
+          disabled={pagination.page === pagination.totalPages}
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
+  // Render resource rating as a progress bar
+  const renderRating = (rating?: number) => {
+    if (!rating) return null;
+    
+    return (
+      <div className="flex items-center gap-2">
+        <Progress value={rating * 20} className="h-2 w-24" indicatorClassName={`bg-${rating > 4 ? 'green' : rating > 3 ? 'yellow' : 'red'}-500`} />
+        <span className="text-xs font-medium">{rating.toFixed(1)}</span>
+      </div>
+    );
   };
 
   return (
@@ -240,7 +304,7 @@ const Resources = () => {
           </CardContent>
         </Card>
 
-        {isLoading ? (
+        {isInitialLoad ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, index) => (
               <Card key={index} className="h-64 animate-pulse bg-gray-100">
@@ -261,89 +325,93 @@ const Resources = () => {
               </div>
             </CardContent>
           </Card>
-        ) : filteredResources.length === 0 ? (
+        ) : resources.length === 0 ? (
           <Card>
             <CardContent className="p-6">
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">No resources found matching your criteria.</p>
-                <Button variant="outline" onClick={() => {
-                  setSearchQuery('');
-                  setType('all');
-                  setDifficulty('all');
-                  setCategory('all');
-                }}>
+                <Button variant="outline" onClick={clearFilters}>
                   Clear Filters
                 </Button>
               </div>
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredResources.map((resource) => (
-              <Card key={resource.id} className="hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <span className="flex items-center gap-1">
-                      {getIcon(resource.type)}
-                      <span className="capitalize">{resource.type}</span>
-                    </span>
-                    <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
-                      {resource.difficulty}
-                    </span>
-                  </div>
-                  <CardTitle className="mt-2">{resource.title}</CardTitle>
-                  <CardDescription className="text-xs text-gray-500">
-                    {resource.author && `By ${resource.author}`}
-                    {resource.date_published && resource.author && ' • '}
-                    {resource.date_published && new Date(resource.date_published).toLocaleDateString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600 mb-4 line-clamp-2">{resource.description}</p>
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {resource.tags && resource.tags.slice(0, 3).map((tag) => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs"
+          <>
+            {isLoading && !isInitialLoad && (
+              <div className="fixed top-0 left-0 w-full z-50">
+                <Progress value={undefined} className="h-1" indicatorClassName="bg-blue-500 animate-pulse" />
+              </div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {resources.map((resource) => (
+                <Card key={resource.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <span className="flex items-center gap-1">
+                        {getIcon(resource.type)}
+                        <span className="capitalize">{resource.type}</span>
+                      </span>
+                      <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-600">
+                        {resource.difficulty}
+                      </span>
+                    </div>
+                    <CardTitle className="mt-2 line-clamp-2">{resource.title}</CardTitle>
+                    <CardDescription className="text-xs text-gray-500">
+                      {resource.author && `By ${resource.author}`}
+                      {resource.date_published && resource.author && ' • '}
+                      {resource.date_published && new Date(resource.date_published).toLocaleDateString()}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{resource.description}</p>
+                    {renderRating(resource.rating)}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {resource.tags && resource.tags.slice(0, 3).map((tag) => (
+                        <span
+                          key={tag}
+                          className="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {resource.tags && resource.tags.length > 3 && (
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
+                          +{resource.tags.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-0 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <button 
+                        className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors"
+                        onClick={() => toggleLike(resource.id)}
                       >
-                        {tag}
-                      </span>
-                    ))}
-                    {resource.tags && resource.tags.length > 3 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs">
-                        +{resource.tags.length - 3} more
-                      </span>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="pt-0 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <button 
-                      className="flex items-center gap-1 text-gray-500 hover:text-red-500 transition-colors"
-                      onClick={() => toggleLike(resource.id)}
+                        <Heart className={`w-5 h-5 ${resource.likes ? "fill-current text-red-500" : ""}`} />
+                        <span>{resource.likes || 0}</span>
+                      </button>
+                      <button 
+                        className="flex items-center gap-1 text-gray-500 hover:text-indigo-500 transition-colors"
+                        onClick={() => toggleSave(resource.id)}
+                      >
+                        <Bookmark className={`w-5 h-5 ${resource.saved ? "fill-current text-indigo-500" : ""}`} />
+                        <span>{resource.saved ? "Saved" : "Save"}</span>
+                      </button>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewResource(resource.url)}
                     >
-                      <Heart className={`w-5 h-5 ${resource.likes ? "fill-current text-red-500" : ""}`} />
-                      <span>{resource.likes || 0}</span>
-                    </button>
-                    <button 
-                      className="flex items-center gap-1 text-gray-500 hover:text-indigo-500 transition-colors"
-                      onClick={() => toggleSave(resource.id)}
-                    >
-                      <Bookmark className={`w-5 h-5 ${resource.saved ? "fill-current text-indigo-500" : ""}`} />
-                      <span>{resource.saved ? "Saved" : "Save"}</span>
-                    </button>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleViewResource(resource.url)}
-                  >
-                    View Resource
-                  </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
+                      View Resource
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+            {renderPagination()}
+          </>
         )}
       </main>
     </div>
