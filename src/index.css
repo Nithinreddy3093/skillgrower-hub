@@ -67,6 +67,10 @@
   .animate-slide-up {
     animation: slideUp 0.3s ease-out;
   }
+  
+  .theme-transition {
+    @apply transition-colors duration-300;
+  }
 }
 
 @keyframes fadeIn {
