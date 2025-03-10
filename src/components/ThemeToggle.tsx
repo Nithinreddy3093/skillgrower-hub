@@ -15,7 +15,7 @@ export const ThemeToggle = () => {
             variant="ghost" 
             size="icon" 
             onClick={toggleTheme}
-            className="rounded-full w-9 h-9 transition-colors"
+            className="rounded-full w-9 h-9 transition-colors dark:hover:bg-indigo-950/50"
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? (

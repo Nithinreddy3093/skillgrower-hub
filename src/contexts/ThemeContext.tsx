@@ -29,12 +29,15 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     // Update localStorage when theme changes
     localStorage.setItem("theme", theme);
     
-    // Update document class
+    // Update document class with a smooth transition
     if (theme === "dark") {
       document.documentElement.classList.add("dark");
     } else {
       document.documentElement.classList.remove("dark");
     }
+    
+    // Add transition class to body for smooth theme changes
+    document.body.classList.add("theme-transition");
   }, [theme]);
 
   // Listen for system preference changes

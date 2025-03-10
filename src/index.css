@@ -47,6 +47,14 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 238 82% 60%;
+    --sidebar-background: 222.2 84% 3.9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 238 82% 60%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 217.2 32.6% 17.5%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217.2 32.6% 17.5%;
+    --sidebar-ring: 238 82% 60%;
   }
 }
 
@@ -55,7 +63,7 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground antialiased;
+    @apply bg-background text-foreground antialiased theme-transition;
   }
 }
 
@@ -70,6 +78,26 @@
   
   .theme-transition {
     @apply transition-colors duration-300;
+  }
+
+  .card-hover {
+    @apply hover:shadow-md dark:hover:shadow-indigo-950/20 theme-transition;
+  }
+  
+  .dark-card {
+    @apply bg-white dark:bg-card dark:border-border theme-transition;
+  }
+  
+  .high-contrast-text {
+    @apply text-gray-900 dark:text-gray-50 theme-transition;
+  }
+  
+  .secondary-text {
+    @apply text-gray-600 dark:text-gray-300 theme-transition;
+  }
+  
+  .tertiary-text {
+    @apply text-gray-500 dark:text-gray-400 theme-transition;
   }
 }
 

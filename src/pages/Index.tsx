@@ -16,7 +16,7 @@ const Index = () => {
   } = useDashboardData(user?.id);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 theme-transition">
       <Navigation />
       
       <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
