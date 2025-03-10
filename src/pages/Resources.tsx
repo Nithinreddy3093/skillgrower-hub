@@ -85,7 +85,7 @@ const Resources = () => {
       setError(null);
       
       try {
-        // Construct query parameters string
+        // Construct query parameters string for the URL 
         const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString()
@@ -96,13 +96,15 @@ const Resources = () => {
         if (difficulty !== 'all') queryParams.set('difficulty', difficulty);
         if (category !== 'all') queryParams.set('category', category);
         
-        // Fixed: removed 'query' property and used proper options format
+        // Convert the URLSearchParams to a query string
+        const queryString = queryParams.toString();
+        
+        // Correctly invoke the edge function with the query string in the URL
         const { data, error } = await supabase.functions.invoke(
-          'get-resources',
+          'get-resources' + (queryString ? `?${queryString}` : ''),
           { 
             method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-            params: Object.fromEntries(queryParams)
+            headers: { 'Content-Type': 'application/json' }
           }
         );
         
