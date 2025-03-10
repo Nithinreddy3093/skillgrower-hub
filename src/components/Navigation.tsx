@@ -2,18 +2,19 @@
 import { Home, Target, BookOpen, Library, Users, LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Navigation = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
   return (
-    <nav className="bg-indigo-600 text-white p-4 fixed w-full top-0 z-50">
+    <nav className="bg-indigo-600 dark:bg-indigo-900 text-white p-4 fixed w-full top-0 z-50 transition-colors duration-200">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center space-x-8">
           <Link to="/" className="flex items-center space-x-2 text-xl font-semibold">
             <div className="w-8 h-8 bg-white rounded p-1.5">
-              <svg viewBox="0 0 24 24" fill="none" className="text-indigo-600">
+              <svg viewBox="0 0 24 24" fill="none" className="text-indigo-600 dark:text-indigo-500">
                 <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" strokeWidth="2"/>
                 <path d="M9 12L11 14L15 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -44,11 +45,12 @@ export const Navigation = () => {
           </div>
         </div>
         <div className="flex items-center space-x-4">
+          <ThemeToggle />
           <button 
             onClick={() => navigate('/profile')} 
             className="flex items-center space-x-2 hover:text-indigo-100 transition cursor-pointer"
           >
-            <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-indigo-500 dark:bg-indigo-700 flex items-center justify-center">
               <User size={20} />
             </div>
             <span className="text-sm">{user?.user_metadata?.full_name || 'Account'}</span>

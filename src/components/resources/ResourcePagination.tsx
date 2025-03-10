@@ -18,11 +18,12 @@ export const ResourcePagination = ({ page, totalPages, onPageChange }: Paginatio
         size="sm" 
         onClick={() => onPageChange(page - 1)}
         disabled={page === 1}
+        className="border-gray-300 dark:border-gray-700 transition-colors"
       >
         <ChevronLeft className="h-4 w-4" />
         Previous
       </Button>
-      <div className="text-sm text-gray-600">
+      <div className="text-sm text-gray-600 dark:text-gray-300">
         Page {page} of {totalPages}
       </div>
       <Button 
@@ -30,6 +31,7 @@ export const ResourcePagination = ({ page, totalPages, onPageChange }: Paginatio
         size="sm" 
         onClick={() => onPageChange(page + 1)}
         disabled={page === totalPages}
+        className="border-gray-300 dark:border-gray-700 transition-colors"
       >
         Next
         <ChevronRight className="h-4 w-4" />
