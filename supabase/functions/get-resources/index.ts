@@ -6,7 +6,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Simple in-memory cache with 5-minute expiration
+// Improved caching with 5-minute expiration
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
 let resourcesCache = {
   data: null,
@@ -41,10 +41,40 @@ serve(async (req) => {
       console.log("Using cached data...");
     }
     
-    // Apply filters to cached data
+    // Optimize filtering with early returns when possible
     let filteredData = [...resourcesCache.data];
     
-    // Apply search filter
+    // Apply filters in order of most restrictive first for better performance
+    // Apply type filter (usually most restrictive)
+    if (type && type !== 'all') {
+      filteredData = filteredData.filter(resource => resource.type === type);
+      if (filteredData.length === 0) {
+        // Early return if no results after type filtering
+        return createSuccessResponse([], page, limit);
+      }
+    }
+    
+    // Apply difficulty filter
+    if (difficulty && difficulty !== 'all') {
+      filteredData = filteredData.filter(resource => resource.difficulty === difficulty);
+      if (filteredData.length === 0) {
+        // Early return if no results after difficulty filtering
+        return createSuccessResponse([], page, limit);
+      }
+    }
+    
+    // Apply category/tag filter
+    if (category && category !== 'all') {
+      filteredData = filteredData.filter(
+        resource => resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
+      );
+      if (filteredData.length === 0) {
+        // Early return if no results after category filtering
+        return createSuccessResponse([], page, limit);
+      }
+    }
+    
+    // Apply search filter last (most computational)
     if (search) {
       const query = search.toLowerCase();
       filteredData = filteredData.filter(
@@ -56,50 +86,7 @@ serve(async (req) => {
       );
     }
     
-    // Apply type filter
-    if (type && type !== 'all') {
-      filteredData = filteredData.filter(resource => resource.type === type);
-    }
-    
-    // Apply difficulty filter
-    if (difficulty && difficulty !== 'all') {
-      filteredData = filteredData.filter(resource => resource.difficulty === difficulty);
-    }
-    
-    // Apply category/tag filter
-    if (category && category !== 'all') {
-      filteredData = filteredData.filter(
-        resource => resource.tags && resource.tags.some(tag => tag.toLowerCase().includes(category.toLowerCase()))
-      );
-    }
-    
-    // Get total count for pagination info
-    const totalCount = filteredData.length;
-    
-    // Apply pagination
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit;
-    const paginatedData = filteredData.slice(startIndex, endIndex);
-    
-    return new Response(
-      JSON.stringify({ 
-        data: paginatedData,
-        pagination: {
-          total: totalCount,
-          page: page,
-          limit: limit,
-          totalPages: Math.ceil(totalCount / limit)
-        },
-        message: "Successfully fetched resources"
-      }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=300" // Allow browser caching for 5 minutes
-        } 
-      }
-    );
+    return createSuccessResponse(filteredData, page, limit);
   } catch (error) {
     console.error("Error fetching resources data:", error);
     return new Response(
@@ -117,6 +104,37 @@ serve(async (req) => {
     );
   }
 });
+
+// Helper function to create a consistent success response
+function createSuccessResponse(filteredData, page, limit) {
+  // Get total count for pagination info
+  const totalCount = filteredData.length;
+  
+  // Apply pagination
+  const startIndex = (page - 1) * limit;
+  const endIndex = startIndex + limit;
+  const paginatedData = filteredData.slice(startIndex, endIndex);
+  
+  return new Response(
+    JSON.stringify({ 
+      data: paginatedData,
+      pagination: {
+        total: totalCount,
+        page: page,
+        limit: limit,
+        totalPages: Math.ceil(totalCount / limit)
+      },
+      message: "Successfully fetched resources"
+    }),
+    { 
+      headers: { 
+        ...corsHeaders,
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=300" // Allow browser caching for 5 minutes
+      } 
+    }
+  );
+}
 
 // This function simulates fetching data from a Kaggle dataset
 // In production, you would integrate with the actual Kaggle API or use another data source

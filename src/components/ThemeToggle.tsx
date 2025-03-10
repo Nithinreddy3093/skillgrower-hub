@@ -15,7 +15,7 @@ export const ThemeToggle = () => {
             variant="ghost" 
             size="icon" 
             onClick={toggleTheme}
-            className="rounded-full w-9 h-9 transition-colors dark:hover:bg-indigo-950/50"
+            className="rounded-full w-9 h-9 transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? (
@@ -25,7 +25,7 @@ export const ThemeToggle = () => {
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
           <p>Switch to {theme === 'light' ? 'dark' : 'light'} mode</p>
         </TooltipContent>
       </Tooltip>

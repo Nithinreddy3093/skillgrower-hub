@@ -16,10 +16,10 @@ const Index = () => {
   } = useDashboardData(user?.id);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 theme-transition">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 dark:text-gray-100 theme-transition">
       <Navigation />
       
-      <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
+      <main className="max-w-7xl mx-auto pt-24 px-4 sm:px-6 pb-12">
         <DashboardHeader />
         
         {/* Goals section */}

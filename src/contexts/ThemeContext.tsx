@@ -13,6 +13,9 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {
+    // Ensure we're client-side to access window
+    if (typeof window === 'undefined') return 'dark';
+    
     // Check for saved theme in localStorage
     const savedTheme = localStorage.getItem("theme") as Theme;
     if (savedTheme) return savedTheme;
@@ -52,12 +55,8 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     };
     
     // Modern browsers support addEventListener
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-    
-    return undefined;
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
   }, []);
 
   const toggleTheme = () => {

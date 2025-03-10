@@ -152,14 +152,14 @@ const Resources = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 theme-transition">
       <Navigation />
       
-      <main className="max-w-7xl mx-auto pt-24 px-4 pb-12">
-        <div className="flex items-baseline justify-between mb-8">
+      <main className="max-w-7xl mx-auto pt-24 px-4 sm:px-6 pb-12">
+        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-gray-900">Resource Library</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white">Resource Library</h1>
+            <p className="text-gray-600 dark:text-gray-300 mt-2">
               Discover curated resources to enhance your skills and knowledge
             </p>
           </div>
@@ -186,7 +186,7 @@ const Resources = () => {
         ) : (
           <>
             <ResourceProgress visible={isLoading && !isInitialLoad} />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
               {resources.map((resource) => (
                 <ResourceCard 
                   key={resource.id} 
