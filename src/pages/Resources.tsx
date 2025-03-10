@@ -85,20 +85,25 @@ const Resources = () => {
       setError(null);
       
       try {
-        // Construct query parameters
-        const params = new URLSearchParams({
+        // Construct query parameters string
+        const queryParams = new URLSearchParams({
           page: pagination.page.toString(),
           limit: pagination.limit.toString()
         });
         
-        if (debouncedSearch) params.set('search', debouncedSearch);
-        if (type !== 'all') params.set('type', type);
-        if (difficulty !== 'all') params.set('difficulty', difficulty);
-        if (category !== 'all') params.set('category', category);
+        if (debouncedSearch) queryParams.set('search', debouncedSearch);
+        if (type !== 'all') queryParams.set('type', type);
+        if (difficulty !== 'all') queryParams.set('difficulty', difficulty);
+        if (category !== 'all') queryParams.set('category', category);
         
+        // Fixed: removed 'query' property and used proper options format
         const { data, error } = await supabase.functions.invoke(
           'get-resources',
-          { query: params }
+          { 
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+            params: Object.fromEntries(queryParams)
+          }
         );
         
         if (error) {

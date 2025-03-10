@@ -20,6 +20,7 @@ serve(async (req) => {
   }
 
   try {
+    // Extract params from request URL
     const url = new URL(req.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '12');
