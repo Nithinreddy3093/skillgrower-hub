@@ -43,7 +43,7 @@ const Collaborate = () => {
       schedule: "Wednesdays at 18:00",
       status: "active",
       tags: ["React", "JavaScript", "TypeScript"],
-      whatsappLink: "https://chat.whatsapp.com/example1"
+      whatsappLink: "https://chat.whatsapp.com/HJjUz2dhGbyJw9mRBH2qSm"
     },
     {
       id: 2,
@@ -53,7 +53,7 @@ const Collaborate = () => {
       schedule: "Mondays at 19:00",
       status: "upcoming",
       tags: ["Leadership", "Communication", "Time Management"],
-      whatsappLink: "https://chat.whatsapp.com/example2"
+      whatsappLink: "https://chat.whatsapp.com/IZyeVjk250I1Cy17NbWl8K"
     },
   ]);
 
