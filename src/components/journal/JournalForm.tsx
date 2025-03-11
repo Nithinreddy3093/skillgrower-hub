@@ -87,11 +87,11 @@ export const JournalForm = ({ userId, onEntryCreated }: JournalFormProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg p-6 shadow-sm">
-      <h2 className="text-2xl font-semibold mb-6">New Entry</h2>
+    <div className="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm dark:shadow-gray-900/30 border border-gray-100 dark:border-gray-700">
+      <h2 className="text-2xl font-semibold mb-6 text-gray-900 dark:text-white">New Entry</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-sm font-medium mb-2">
+          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
             How are you feeling about your progress today?
           </label>
           <div className="flex gap-4">
@@ -126,7 +126,7 @@ export const JournalForm = ({ userId, onEntryCreated }: JournalFormProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2" htmlFor="entry">
+          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300" htmlFor="entry">
             Reflect on your learning journey
           </label>
           <Textarea
@@ -136,11 +136,12 @@ export const JournalForm = ({ userId, onEntryCreated }: JournalFormProps) => {
             onChange={(e) => setEntry(e.target.value)}
             rows={6}
             disabled={isSubmitting}
+            className="dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium mb-2">
+          <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
             Related Skills
           </label>
           <div className="flex flex-wrap gap-2">
@@ -152,6 +153,7 @@ export const JournalForm = ({ userId, onEntryCreated }: JournalFormProps) => {
                 onClick={() => toggleSkill(skill)}
                 size="sm"
                 disabled={isSubmitting}
+                className="dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600"
               >
                 {skill}
               </Button>
