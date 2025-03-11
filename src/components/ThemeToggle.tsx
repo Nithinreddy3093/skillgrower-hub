@@ -23,6 +23,7 @@ export const ThemeToggle = () => {
             ) : (
               <Sun className="h-5 w-5 text-yellow-500 transition-transform hover:rotate-12" />
             )}
+            <span className="sr-only">Toggle theme</span>
           </Button>
         </TooltipTrigger>
         <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
