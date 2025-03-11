@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { toast } from "sonner";
@@ -32,7 +31,6 @@ const Journal = () => {
 
       if (error) throw error;
       
-      // Type assertion to ensure data matches our JournalEntry type
       const typedData = (data || []).map(item => ({
         ...item,
         mood: item.mood as "happy" | "neutral" | "sad"
@@ -47,7 +45,6 @@ const Journal = () => {
     }
   };
 
-  // Subscribe to real-time updates for journal entries
   useEffect(() => {
     if (!user) return;
 
@@ -64,7 +61,6 @@ const Journal = () => {
         (payload) => {
           console.log('Journal entry change received:', payload);
           
-          // Handle different types of changes
           if (payload.eventType === 'INSERT') {
             const newEntry = {
               ...payload.new,
@@ -90,7 +86,6 @@ const Journal = () => {
       )
       .subscribe();
 
-    // Cleanup subscription when component unmounts
     return () => {
       supabase.removeChannel(channel);
     };
@@ -101,12 +96,12 @@ const Journal = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navigation />
       
       <main className="max-w-7xl mx-auto pt-24 px-4">
-        <h1 className="text-4xl font-bold text-gray-900">Learning Journal</h1>
-        <p className="text-gray-600 mt-2 mb-8">Reflect on your learning journey and track your progress</p>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Learning Journal</h1>
+        <p className="text-gray-600 dark:text-gray-300 mt-2 mb-8">Reflect on your learning journey and track your progress</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {user && (
@@ -117,7 +112,7 @@ const Journal = () => {
           )}
 
           <div>
-            <h2 className="text-2xl font-semibold mb-6">Recent Entries</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Recent Entries</h2>
             <JournalEntryList 
               entries={journalEntries} 
               isLoading={isLoading} 

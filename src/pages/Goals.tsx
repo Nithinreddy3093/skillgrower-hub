@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Navigation } from "@/components/Navigation";
 import { toast } from "sonner";
@@ -13,7 +12,6 @@ const Goals = () => {
   const [goals, setGoals] = useState<Goal[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch goals on component mount and when user changes
   useEffect(() => {
     if (user) {
       fetchGoals();
@@ -33,7 +31,6 @@ const Goals = () => {
 
       if (error) throw error;
       
-      // Type assertion to ensure data matches our Goal type
       const typedData = (data || []).map(item => ({
         ...item,
         category: item.category as "academic" | "soft"
@@ -48,7 +45,6 @@ const Goals = () => {
     }
   };
 
-  // Subscribe to real-time updates for goals
   useEffect(() => {
     if (!user) return;
 
@@ -65,7 +61,6 @@ const Goals = () => {
         (payload) => {
           console.log('Goals change received:', payload);
           
-          // Handle different types of changes
           if (payload.eventType === 'INSERT') {
             const newGoal = {
               ...payload.new,
@@ -91,7 +86,6 @@ const Goals = () => {
       )
       .subscribe();
 
-    // Cleanup subscription when component unmounts
     return () => {
       supabase.removeChannel(channel);
     };
@@ -112,7 +106,6 @@ const Goals = () => {
 
       if (error) throw error;
 
-      // The real-time subscription will handle removing the goal from the state
       toast.success("Goal deleted successfully!");
     } catch (error: any) {
       console.error("Error deleting goal:", error);
@@ -121,12 +114,12 @@ const Goals = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <Navigation />
       
       <main className="max-w-7xl mx-auto pt-24 px-4">
-        <h1 className="text-4xl font-bold text-gray-900">Goal Setting</h1>
-        <p className="text-gray-600 mt-2 mb-8">Set SMART goals to track your progress and achieve your aspirations</p>
+        <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Goal Setting</h1>
+        <p className="text-gray-600 dark:text-gray-300 mt-2 mb-8">Set SMART goals to track your progress and achieve your aspirations</p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {user && (
@@ -137,7 +130,7 @@ const Goals = () => {
           )}
 
           <div>
-            <h2 className="text-2xl font-semibold mb-6">Your Goals</h2>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-6">Your Goals</h2>
             <GoalList 
               goals={goals} 
               isLoading={isLoading} 

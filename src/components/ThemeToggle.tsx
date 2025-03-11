@@ -12,20 +12,20 @@ export const ThemeToggle = () => {
       <Tooltip>
         <TooltipTrigger asChild>
           <Button 
-            variant="ghost" 
+            variant="outline" 
             size="icon" 
             onClick={toggleTheme}
-            className="rounded-full w-9 h-9 transition-colors dark:text-gray-100 dark:hover:bg-gray-800"
+            className="rounded-full w-9 h-9 transition-colors border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
             aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
           >
             {theme === 'light' ? (
-              <Moon className="h-5 w-5 text-indigo-600 transition-transform hover:rotate-12" />
+              <Moon className="h-5 w-5 text-indigo-600 dark:text-indigo-400 transition-transform hover:rotate-12" />
             ) : (
-              <Sun className="h-5 w-5 text-yellow-300 transition-transform hover:rotate-12" />
+              <Sun className="h-5 w-5 text-yellow-500 transition-transform hover:rotate-12" />
             )}
           </Button>
         </TooltipTrigger>
-        <TooltipContent className="dark:bg-gray-800 dark:text-gray-100 dark:border-gray-700">
+        <TooltipContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-700">
           <p>Switch to {theme === 'light' ? 'dark' : 'light'} mode</p>
         </TooltipContent>
       </Tooltip>
