@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Target, BookOpen } from "lucide-react";
@@ -7,8 +6,8 @@ export const DashboardHeader = () => {
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8">
       <div>
-        <h1 className="text-4xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Track your learning progress and achievements</p>
+        <h1 className="text-4xl font-bold" style={{ color: 'var(--text-color)' }}>Dashboard</h1>
+        <p className="mt-2" style={{ color: 'var(--subtext-color)' }}>Track your learning progress and achievements</p>
       </div>
       <div className="mt-4 sm:mt-0 flex gap-3">
         <Button asChild>
@@ -27,3 +26,4 @@ export const DashboardHeader = () => {
     </div>
   );
 };
+

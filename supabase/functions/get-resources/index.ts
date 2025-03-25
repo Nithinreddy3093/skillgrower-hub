@@ -1,5 +1,7 @@
 
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.205.0/http/server.ts";
+
+
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,10 +10,24 @@ const corsHeaders = {
 
 // Improved caching with 5-minute expiration
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
-let resourcesCache = {
+let resourcesCache: { data: Resource[] | null, timestamp: number } = {
   data: null,
   timestamp: 0
 };
+
+interface Resource {
+  id: number;
+  title: string;
+  description: string;
+  url: string;
+  type: string;
+  difficulty: string;
+  tags: string[];
+  author: string;
+  date_published: string;
+  rating: number;
+  language: string;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -142,18 +158,18 @@ async function fetchResourcesData() {
   // For demo purposes, returning a subset of mock data based on the dataset structure
   return [
     {
-      id: 1,
-      title: "Introduction to Machine Learning",
-      description: "A comprehensive guide to machine learning basics",
-      url: "https://example.com/ml-intro",
-      type: "article",
-      difficulty: "beginner",
-      tags: ["machine learning", "AI", "data science"],
-      author: "Andrew Ng",
-      date_published: "2023-01-15",
-      rating: 4.8,
-      language: "English"
-    },
+      "id": 1,
+      "title": "Introduction to Machine Learning",
+      "description": "A comprehensive guide to machine learning basics",
+      "url": "https://www.coursera.org/learn/machine-learning",
+      "type": "course",
+      "difficulty": "beginner",
+      "tags": ["Machine Learning", "AI", "Data Science"],
+      "author": "Andrew Ng",
+      "date_published": "2023-01-15",
+      "rating": 4.9,
+      "language": "English"
+    },   
     {
       id: 2,
       title: "Advanced Python Programming",

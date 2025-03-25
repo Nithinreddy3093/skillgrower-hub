@@ -1,5 +1,4 @@
-
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
 type Theme = "light" | "dark";
 
@@ -12,56 +11,43 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    // Ensure we're client-side to access window
-    if (typeof window === 'undefined') return 'dark';
-    
-    // Check for saved theme in localStorage
-    const savedTheme = localStorage.getItem("theme") as Theme;
-    if (savedTheme) return savedTheme;
-    
-    // Check user's system preference
-    if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-      return "dark";
+  // Get initial theme from localStorage or system preference
+  const getInitialTheme = (): Theme => {
+    if (typeof window !== "undefined") {
+      const storedTheme = localStorage.getItem("theme") as Theme | null;
+      if (storedTheme) return storedTheme;
+      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
     }
-    
-    return "light";
-  });
+    return "light"; // Default theme for SSR environments
+  };
 
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+
+  // Apply theme to <html> and save to localStorage
   useEffect(() => {
-    // Update localStorage when theme changes
-    localStorage.setItem("theme", theme);
-    
-    // Update document class with a smooth transition
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
+    if (typeof document !== "undefined") {
+      document.documentElement.classList.remove("light", "dark");
+      document.documentElement.classList.add(theme);
+      localStorage.setItem("theme", theme);
     }
-    
-    // Add transition class to body for smooth theme changes
-    document.body.classList.add("theme-transition");
   }, [theme]);
 
-  // Listen for system preference changes
+  // Sync theme with system preference changes
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    
-    const handleChange = (e: MediaQueryListEvent) => {
-      // Only change theme if user hasn't explicitly set a preference
-      if (!localStorage.getItem("theme")) {
-        setTheme(e.matches ? "dark" : "light");
-      }
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+
+    const handleSystemThemeChange = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? "dark" : "light");
     };
-    
-    // Modern browsers support addEventListener
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
+
+    mediaQuery.addEventListener("change", handleSystemThemeChange);
+    return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
   }, []);
 
-  const toggleTheme = () => {
-    setTheme(prevTheme => (prevTheme === "light" ? "dark" : "light"));
-  };
+  // Memoized theme toggle function
+  const toggleTheme = useCallback(() => {
+    setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
@@ -72,7 +58,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
 
 export const useTheme = (): ThemeContextType => {
   const context = useContext(ThemeContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error("useTheme must be used within a ThemeProvider");
   }
   return context;
