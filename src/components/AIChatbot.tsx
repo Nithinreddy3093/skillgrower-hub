@@ -115,7 +115,7 @@ export const AIChatbot = () => {
       {!isOpen && (
         <Button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 rounded-full w-14 h-14 p-0 shadow-lg"
+          className="fixed bottom-6 right-6 rounded-full w-14 h-14 p-0 shadow-lg bg-indigo-600 hover:bg-indigo-700"
         >
           <Bot size={24} />
         </Button>
@@ -194,9 +194,14 @@ export const AIChatbot = () => {
                     onChange={(e) => setMessage(e.target.value)}
                     placeholder="Ask about skills, learning paths..."
                     disabled={isLoading}
-                    className="flex-1 dark:bg-gray-700 dark:border-gray-600"
+                    className="flex-1 dark:bg-gray-700 dark:border-gray-600 dark:text-white dark:placeholder-gray-400"
                   />
-                  <Button type="submit" size="icon" disabled={isLoading || !message.trim()}>
+                  <Button 
+                    type="submit" 
+                    size="icon" 
+                    disabled={isLoading || !message.trim()}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
                     <Send size={18} />
                   </Button>
                 </div>

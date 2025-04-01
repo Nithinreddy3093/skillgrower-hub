@@ -133,8 +133,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setProfile(null);
       
       toast.success('Logged out successfully');
+      navigate('/login');
       
-      // Navigation will be handled by the onAuthStateChange event listener
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error(error.message || 'Error during logout');

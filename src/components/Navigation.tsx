@@ -3,17 +3,18 @@ import { Home, Target, BookOpen, Library, Users, LogOut, User } from "lucide-rea
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { toast } from "sonner";
 
 export const Navigation = () => {
-  const navigate = useNavigate();
   const { logout, user } = useAuth();
 
   const handleLogout = async () => {
     try {
       await logout();
-      // Navigate is handled inside the logout function in AuthContext
+      // Navigation is now handled inside the logout function in AuthContext
     } catch (error) {
       console.error("Logout error:", error);
+      toast.error("Failed to log out. Please try again.");
     }
   };
 
@@ -55,15 +56,15 @@ export const Navigation = () => {
         </div>
         <div className="flex items-center space-x-4">
           <ThemeToggle />
-          <button 
-            onClick={() => navigate('/profile')} 
+          <Link 
+            to="/profile" 
             className="flex items-center space-x-2 hover:text-indigo-100 transition cursor-pointer"
           >
             <div className="w-8 h-8 rounded-full bg-indigo-500 dark:bg-indigo-700 flex items-center justify-center transition-colors">
               <User size={20} />
             </div>
             <span className="text-sm hidden sm:inline">{user?.user_metadata?.full_name || 'Account'}</span>
-          </button>
+          </Link>
           <button 
             onClick={handleLogout}
             className="flex items-center space-x-1 hover:text-indigo-100 transition"

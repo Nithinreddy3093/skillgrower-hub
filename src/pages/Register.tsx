@@ -39,9 +39,9 @@ const Register = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 theme-transition">
-      <div className="max-w-md w-full space-y-8">
+      <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+          <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Create your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
@@ -94,7 +94,7 @@ const Register = () => {
           <div>
             <Button 
               type="submit" 
-              className="w-full flex justify-center items-center" 
+              className="w-full flex justify-center items-center bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-600 dark:hover:bg-indigo-700" 
               disabled={isLoading}
             >
               {isLoading ? (
