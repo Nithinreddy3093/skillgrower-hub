@@ -13,6 +13,9 @@ import {
   ResourceEmpty 
 } from "@/components/resources/ResourceLoadingStates";
 import { Resource, Pagination } from "@/components/resources/types";
+import { AddResourceForm } from "@/components/resources/AddResourceForm";
+import { Button } from "@/components/ui/button";
+import { Plus } from "lucide-react";
 
 const Resources = () => {
   const { toast } = useToast();
@@ -30,6 +33,7 @@ const Resources = () => {
     limit: 12,
     totalPages: 0
   });
+  const [showAddResourceForm, setShowAddResourceForm] = useState(false);
   
   // Debounced search
   const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
@@ -44,6 +48,7 @@ const Resources = () => {
 
   // Fetch resources from the API with pagination and filtering
   useEffect(() => {
+    let isMounted = true;
     async function fetchResources() {
       if (isInitialLoad) {
         setIsLoading(true);
@@ -78,23 +83,33 @@ const Resources = () => {
           throw new Error(error.message);
         }
         
-        setResources(data.data);
-        setPagination(data.pagination);
+        if (isMounted) {
+          setResources(data.data);
+          setPagination(data.pagination);
+        }
       } catch (err: any) {
         console.error("Error fetching resources:", err);
-        setError("Failed to load resources. Please try again later.");
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load resources. Please try again later.",
-        });
+        if (isMounted) {
+          setError("Failed to load resources. Please try again later.");
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load resources. Please try again later.",
+          });
+        }
       } finally {
-        setIsLoading(false);
-        setIsInitialLoad(false);
+        if (isMounted) {
+          setIsLoading(false);
+          setIsInitialLoad(false);
+        }
       }
     }
     
     fetchResources();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [debouncedSearch, type, difficulty, category, pagination.page, pagination.limit, toast]);
 
   // Handle page change
@@ -151,6 +166,13 @@ const Resources = () => {
     window.location.reload();
   };
 
+  // Handle success after adding a resource
+  const handleResourceAdded = () => {
+    // Reset to first page and refresh resources
+    setPagination(prev => ({ ...prev, page: 1 }));
+    setIsInitialLoad(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 theme-transition">
       <Navigation />
@@ -163,6 +185,13 @@ const Resources = () => {
               Discover curated resources to enhance your skills and knowledge
             </p>
           </div>
+          <Button 
+            className="flex items-center gap-2"
+            onClick={() => setShowAddResourceForm(true)}
+          >
+            <Plus size={16} />
+            Add Resource
+          </Button>
         </div>
 
         <ResourceFilters 
@@ -205,6 +234,13 @@ const Resources = () => {
           </>
         )}
       </main>
+
+      {/* Add Resource Dialog */}
+      <AddResourceForm 
+        open={showAddResourceForm} 
+        onClose={() => setShowAddResourceForm(false)}
+        onSuccess={handleResourceAdded}
+      />
     </div>
   );
 };

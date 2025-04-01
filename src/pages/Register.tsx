@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const Register = () => {
   const [email, setEmail] = useState("");
@@ -12,6 +13,7 @@ const Register = () => {
   const [name, setName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const { register } = useAuth();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,23 +21,32 @@ const Register = () => {
     
     try {
       await register(email, password, name);
+      toast({
+        title: "Success",
+        description: "Your account has been created successfully!",
+      });
     } catch (error) {
       setPassword("");
+      toast({
+        variant: "destructive",
+        title: "Registration failed",
+        description: error instanceof Error ? error.message : "Please try again.",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 theme-transition">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-white">
             Create your account
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Or{" "}
-            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500">
+            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
               sign in to your account
             </Link>
           </p>
@@ -49,7 +60,7 @@ const Register = () => {
                 placeholder="Full name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="mb-4"
+                className="mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                 disabled={isLoading}
                 autoComplete="name"
               />
@@ -61,7 +72,7 @@ const Register = () => {
                 placeholder="Email address"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mb-4"
+                className="mb-4 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                 disabled={isLoading}
                 autoComplete="email"
               />
@@ -73,6 +84,7 @@ const Register = () => {
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                className="dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100"
                 disabled={isLoading}
                 autoComplete="new-password"
               />
