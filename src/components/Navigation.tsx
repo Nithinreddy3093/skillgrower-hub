@@ -1,6 +1,6 @@
 
 import { Home, Target, BookOpen, Library, Users, LogOut, User } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
@@ -11,7 +11,7 @@ export const Navigation = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      // Navigation is now handled inside the logout function in AuthContext
+      // Navigation is handled inside the logout function
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to log out. Please try again.");
@@ -68,6 +68,7 @@ export const Navigation = () => {
           <button 
             onClick={handleLogout}
             className="flex items-center space-x-1 hover:text-indigo-100 transition"
+            aria-label="Logout"
           >
             <LogOut size={20} />
             <span className="hidden sm:inline">Logout</span>

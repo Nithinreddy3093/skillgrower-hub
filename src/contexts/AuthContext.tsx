@@ -124,17 +124,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      // Clear auth state
+      // First clear the state, then sign out
       setUser(null);
       setIsAuthenticated(false);
       setProfile(null);
       
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
       toast.success('Logged out successfully');
       navigate('/login');
-      
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error(error.message || 'Error during logout');

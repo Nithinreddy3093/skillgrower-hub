@@ -23,6 +23,10 @@ serve(async (req) => {
 
     const { message, userId, history = [] } = await req.json();
 
+    console.log("Received message:", message);
+    console.log("User ID:", userId);
+    console.log("History length:", history.length);
+
     // System message to guide the AI's responses
     const systemMessage = {
       role: "system",
@@ -34,6 +38,7 @@ serve(async (req) => {
       - Offer study techniques and learning strategies
       - Encourage consistent practice and skill development
       - Keep responses concise (3-4 sentences max) and friendly
+      - Include gamification elements like challenges, streaks, and achievements in your responses
       
       You should NOT:
       - Provide generic or vague advice
@@ -49,6 +54,8 @@ serve(async (req) => {
       ...history,
       { role: "user", content: message }
     ];
+
+    console.log("Calling OpenAI API...");
 
     // Call OpenAI API
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -67,10 +74,12 @@ serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.json();
+      console.error("OpenAI API error:", error);
       throw new Error(error.error?.message || "Failed to get response from AI");
     }
 
     const data = await response.json();
+    console.log("OpenAI response received");
     const aiResponse = data.choices[0].message.content;
 
     // TODO: In a real application, we would store the conversation history in the database

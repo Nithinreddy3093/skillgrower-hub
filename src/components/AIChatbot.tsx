@@ -61,6 +61,7 @@ export const AIChatbot = () => {
     setIsLoading(true);
     
     try {
+      console.log("Sending message to skill-assistant function");
       // Get response from AI
       const { data, error } = await supabase.functions.invoke("skill-assistant", {
         method: "POST",
@@ -71,7 +72,12 @@ export const AIChatbot = () => {
         },
       });
       
-      if (error) throw new Error(error.message);
+      if (error) {
+        console.error("Error from skill-assistant function:", error);
+        throw new Error(error.message);
+      }
+      
+      console.log("Received response from skill-assistant:", data);
       
       // Add AI response to chat
       setMessages((prev) => [
@@ -83,7 +89,8 @@ export const AIChatbot = () => {
           timestamp: new Date(),
         },
       ]);
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Error in handleSendMessage:", error);
       toast({
         variant: "destructive",
         title: "Error",
