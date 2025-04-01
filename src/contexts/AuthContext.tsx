@@ -84,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
         setIsAuthenticated(false);
         setProfile(null);
+        navigate('/login');
       }
     });
 
@@ -125,12 +126,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
+      
+      // Clear auth state
       setUser(null);
       setIsAuthenticated(false);
       setProfile(null);
+      
       toast.success('Logged out successfully');
-      navigate('/login');
+      
+      // Navigation will be handled by the onAuthStateChange event listener
     } catch (error: any) {
       console.error('Logout error:', error);
       toast.error(error.message || 'Error during logout');

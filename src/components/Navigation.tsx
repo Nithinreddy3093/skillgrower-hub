@@ -8,6 +8,15 @@ export const Navigation = () => {
   const navigate = useNavigate();
   const { logout, user } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      // Navigate is handled inside the logout function in AuthContext
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
   return (
     <nav className="bg-indigo-600 dark:bg-indigo-900 text-white p-4 fixed w-full top-0 z-50 transition-colors duration-200 shadow-md dark:shadow-indigo-950/30">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
@@ -56,7 +65,7 @@ export const Navigation = () => {
             <span className="text-sm hidden sm:inline">{user?.user_metadata?.full_name || 'Account'}</span>
           </button>
           <button 
-            onClick={logout}
+            onClick={handleLogout}
             className="flex items-center space-x-1 hover:text-indigo-100 transition"
           >
             <LogOut size={20} />

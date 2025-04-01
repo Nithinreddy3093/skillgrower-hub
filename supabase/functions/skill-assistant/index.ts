@@ -7,6 +7,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Get the OpenAI API key from environment variables
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
 serve(async (req) => {
@@ -16,6 +17,10 @@ serve(async (req) => {
   }
 
   try {
+    if (!OPENAI_API_KEY) {
+      throw new Error("OpenAI API key is not configured");
+    }
+
     const { message, userId, history = [] } = await req.json();
 
     // System message to guide the AI's responses
