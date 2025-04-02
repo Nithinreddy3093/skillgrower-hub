@@ -27,6 +27,10 @@ serve(async (req) => {
     console.log("User ID:", userId);
     console.log("History length:", history.length);
 
+    if (!message || typeof message !== 'string' || message.trim() === '') {
+      throw new Error("Message is required and must be a non-empty string");
+    }
+
     // System message to guide the AI's responses
     const systemMessage = {
       role: "system",
@@ -35,10 +39,11 @@ serve(async (req) => {
       You should:
       - Provide specific, actionable learning advice and resources
       - Help users track their progress and set effective learning goals
-      - Offer study techniques and learning strategies
-      - Encourage consistent practice and skill development
+      - Offer study techniques and learning strategies tailored to the user's needs
+      - Encourage consistent practice and skill development with concrete examples
       - Keep responses concise (3-4 sentences max) and friendly
       - Include gamification elements like challenges, streaks, and achievements in your responses
+      - When appropriate, suggest relevant books, courses, or tools
       
       You should NOT:
       - Provide generic or vague advice
@@ -68,7 +73,9 @@ serve(async (req) => {
         model: "gpt-4o-mini",
         messages,
         temperature: 0.7,
-        max_tokens: 300
+        max_tokens: 300,
+        presence_penalty: 0.6,  // Discourage repetition
+        frequency_penalty: 0.5  // Encourage diverse responses
       })
     });
 
@@ -80,6 +87,11 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log("OpenAI response received");
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      throw new Error("Invalid response format from OpenAI API");
+    }
+    
     const aiResponse = data.choices[0].message.content;
 
     // TODO: In a real application, we would store the conversation history in the database
@@ -93,7 +105,11 @@ serve(async (req) => {
     console.error("Error in skill-assistant function:", error);
     
     return new Response(
-      JSON.stringify({ error: error.message || "An unexpected error occurred" }),
+      JSON.stringify({ 
+        error: error.message || "An unexpected error occurred",
+        errorCode: error.code || 500,
+        timestamp: new Date().toISOString()
+      }),
       { 
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
