@@ -73,7 +73,10 @@ export const useChatbot = () => {
           content: m.content 
         }));
       
-      // Get response from AI
+      // Get response from AI with timeout handling
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
       const { data, error } = await supabase.functions.invoke("skill-assistant", {
         method: "POST",
         body: { 
@@ -81,7 +84,10 @@ export const useChatbot = () => {
           userId: user?.id,
           history: chatHistory
         },
+        signal: controller.signal,
       });
+      
+      clearTimeout(timeoutId);
       
       if (error) {
         console.error("Error from skill-assistant function:", error);
@@ -106,6 +112,15 @@ export const useChatbot = () => {
       ]);
     } catch (error: any) {
       console.error("Error in handleSendMessage:", error);
+      
+      let errorMessage = "I'm having trouble connecting right now. Please try again in a moment.";
+      
+      if (error.name === "AbortError") {
+        errorMessage = "The request took too long to complete. Please try a shorter message or try again later.";
+      } else if (error.message.includes("API key")) {
+        errorMessage = "There seems to be an issue with the AI service configuration. Please contact support.";
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
@@ -117,7 +132,7 @@ export const useChatbot = () => {
         ...prev,
         {
           id: Date.now().toString(),
-          content: "I'm having trouble connecting right now. Please try again in a moment.",
+          content: errorMessage,
           sender: "bot",
           timestamp: new Date(),
         },
