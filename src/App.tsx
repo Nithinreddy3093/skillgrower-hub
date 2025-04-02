@@ -9,7 +9,6 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { IntroAnimation } from "./components/IntroAnimation";
-import { AIChatbot } from "./components/chatbot/AIChatbot";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import Journal from "./pages/Journal";
@@ -114,7 +113,6 @@ const App = () => {
                     />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
-                  <AIChatbot />
                 </>
               )}
             </TooltipProvider>
