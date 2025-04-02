@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Bot, X, Minimize2, Maximize2, Send, Trash2 } from "lucide-react";
+import { Bot, X, Minimize2, Maximize2, Send, Trash2, MessagesSquare, ZapFast } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIAssistant } from "@/hooks/useAIAssistant";
 import { ChatMessage } from "./ChatMessage";
@@ -24,6 +24,7 @@ export const AIAssistant = () => {
     expandChat,
     sendMessage,
     clearConversation,
+    handleTextareaChange,
   } = useAIAssistant();
 
   // Return null on server-side to avoid hydration mismatch
@@ -35,7 +36,7 @@ export const AIAssistant = () => {
 
   return (
     <>
-      {/* Chat button */}
+      {/* Chat button with quick tips indicator */}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -47,7 +48,10 @@ export const AIAssistant = () => {
             onClick={toggleChat}
             aria-label="Open AI Assistant"
           >
-            <Bot size={24} />
+            <div className="relative">
+              <Bot size={24} />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+            </div>
           </motion.button>
         )}
       </AnimatePresence>
@@ -68,44 +72,50 @@ export const AIAssistant = () => {
             )}
           >
             {/* Header */}
-            <div className="p-4 bg-indigo-600 dark:bg-indigo-800 text-white flex items-center justify-between">
+            <div className="p-3 bg-indigo-600 dark:bg-indigo-800 text-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <Bot size={20} />
-                <h3 className="font-medium">SkillTrack Assistant</h3>
+                <Bot size={18} />
+                <div className="flex items-center">
+                  <h3 className="font-medium text-sm">SkillTrack Assistant</h3>
+                  <div className="flex items-center ml-1.5">
+                    <ZapFast size={12} className="text-yellow-300 mr-0.5" />
+                    <span className="text-xs text-yellow-200">Fast Mode</span>
+                  </div>
+                </div>
               </div>
               <div className="flex items-center space-x-2">
                 {isMinimized ? (
                   <button 
                     onClick={expandChat} 
-                    className="text-white/80 hover:text-white transition"
+                    className="text-white/80 hover:text-white transition p-1"
                     aria-label="Maximize"
                   >
-                    <Maximize2 size={18} />
+                    <Maximize2 size={16} />
                   </button>
                 ) : (
                   <>
                     <button 
                       onClick={minimizeChat} 
-                      className="text-white/80 hover:text-white transition"
+                      className="text-white/80 hover:text-white transition p-1"
                       aria-label="Minimize"
                     >
-                      <Minimize2 size={18} />
+                      <Minimize2 size={16} />
                     </button>
                     <button 
                       onClick={clearConversation} 
-                      className="text-white/80 hover:text-white transition"
+                      className="text-white/80 hover:text-white transition p-1"
                       aria-label="Clear chat"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   </>
                 )}
                 <button 
                   onClick={() => setIsOpen(false)} 
-                  className="text-white/80 hover:text-white transition"
+                  className="text-white/80 hover:text-white transition p-1"
                   aria-label="Close"
                 >
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               </div>
             </div>
@@ -114,7 +124,7 @@ export const AIAssistant = () => {
             {!isMinimized && (
               <>
                 {/* Messages area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-3 space-y-3">
                   {messages.map((message) => (
                     <ChatMessage 
                       key={message.id} 
@@ -130,25 +140,30 @@ export const AIAssistant = () => {
                   <textarea
                     ref={inputRef}
                     value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
+                    onChange={handleTextareaChange}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
                         sendMessage();
                       }
                     }}
-                    placeholder="Ask anything about skills and learning..."
+                    placeholder="Ask for quick learning tips..."
                     className="flex-1 border dark:border-gray-700 rounded-md p-2 resize-none outline-none text-sm bg-transparent max-h-32 min-h-[42px]"
                     disabled={isLoading}
                     rows={1}
                   />
                   <Button 
                     type="submit"
-                    className="flex-shrink-0 h-10 w-10 p-0 bg-indigo-600 hover:bg-indigo-700"
+                    className={cn(
+                      "flex-shrink-0 h-10 w-10 p-0",
+                      isLoading 
+                        ? "bg-gray-400 cursor-not-allowed" 
+                        : "bg-indigo-600 hover:bg-indigo-700"
+                    )}
                     disabled={isLoading || !prompt.trim()}
                     aria-label="Send message"
                   >
-                    <Send size={18} />
+                    <Send size={16} />
                   </Button>
                 </form>
               </>

@@ -44,44 +44,49 @@ serve(async (req) => {
       throw new Error("Message is required and must be a non-empty string");
     }
 
-    // System message to guide the AI's responses
+    // Enhanced system message for faster, more effective responses
     const systemMessage = {
       role: "system",
-      content: `You are SkillTrack Assistant, an AI designed to help users improve their skills and achieve their learning goals.
+      content: `You are SkillTrack Assistant, an AI designed to help users improve their skills and learning.
       
-      You should:
-      - Provide specific, actionable learning advice and resources
-      - Help users track their progress and set effective learning goals
-      - Offer study techniques and learning strategies tailored to the user's needs
-      - Encourage consistent practice and skill development with concrete examples
-      - Keep responses concise (3-4 sentences max) and friendly
-      - Include gamification elements like challenges, streaks, and achievements in your responses
-      - When appropriate, suggest relevant books, courses, or tools
+      Response Guidelines:
+      - Keep responses SHORT and DIRECT (1-3 sentences whenever possible)
+      - Respond QUICKLY with the most relevant information first
+      - Provide SPECIFIC, ACTIONABLE learning advice focused on efficiency
+      - When suggesting resources, be HIGHLY SELECTIVE (only the best 1-2 options)
+      - Use BULLET POINTS for multiple items
+      - Focus on PRACTICAL techniques that save time and maximize learning
+      - Include QUICK WINS that can be implemented immediately
+      - Use a FRIENDLY but CONCISE tone
       
-      You should NOT:
-      - Provide generic or vague advice
-      - Go off-topic from skill development and learning
-      - Write excessively long responses
+      Avoid:
+      - Generic advice
+      - Long explanations
+      - Multiple options when one clear recommendation would suffice
+      - Theoretical discussions without practical applications
       
-      Focus on practical guidance that users can immediately apply to their learning journey.`
+      Remember: Users value SPEED and EFFECTIVENESS above all. Be their efficient learning partner.`
     };
 
-    // Create message array with system message, chat history, and current user message
+    // Limit history to last 4 exchanges for faster context loading
+    const recentHistory = history.slice(-4);
+
+    // Create message array with system message, recent chat history, and current user message
     const messages = [
       systemMessage,
-      ...history,
+      ...recentHistory,
       { role: "user", content: message }
     ];
 
     console.log("Calling OpenAI API...");
     console.log("Using model: gpt-4o-mini");
     
-    // Try with a 15-second timeout for the OpenAI API call
+    // Try with a reduced timeout for faster perceived performance
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // Reduced from 15s to 10s
 
     try {
-      // Call OpenAI API
+      // Call OpenAI API with optimized parameters
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -89,12 +94,13 @@ serve(async (req) => {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "gpt-4o-mini",
+          model: "gpt-4o-mini", // Fast model
           messages,
-          temperature: 0.7,
-          max_tokens: 300,
-          presence_penalty: 0.6,  // Discourage repetition
-          frequency_penalty: 0.5  // Encourage diverse responses
+          temperature: 0.5,     // Lower temperature for more direct responses
+          max_tokens: 200,      // Reduced from 300 for faster responses
+          presence_penalty: 0.4, // Adjusted for better focus
+          frequency_penalty: 0.5,
+          top_p: 0.9            // Added for more focused responses
         }),
         signal: controller.signal
       });
@@ -123,8 +129,8 @@ serve(async (req) => {
     } catch (fetchError) {
       clearTimeout(timeoutId);
       if (fetchError.name === 'AbortError') {
-        console.error("OpenAI API call timed out after 15 seconds");
-        throw new Error("The OpenAI API request timed out");
+        console.error("OpenAI API call timed out after 10 seconds");
+        throw new Error("The request timed out. Try a shorter question for faster response.");
       }
       throw fetchError;
     }

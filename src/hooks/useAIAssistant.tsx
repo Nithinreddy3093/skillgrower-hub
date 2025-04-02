@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -22,34 +21,57 @@ export const useAIAssistant = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
+  
+  const autoResizeTextarea = (element: HTMLTextAreaElement | null) => {
+    if (!element) return;
+    
+    element.style.height = 'auto';
+    element.style.height = `${Math.min(element.scrollHeight, 150)}px`;
+  };
 
-  // Add initial welcome message
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
-          id: crypto.randomUUID(),
-          content: "Hi there! I'm your SkillTrack AI assistant. How can I help with your learning journey today?",
-          role: "assistant",
-          timestamp: new Date(),
-        },
-      ]);
+    if (user) {
+      const savedMessages = localStorage.getItem(`skilltrack-chat-${user.id}`);
+      if (savedMessages) {
+        try {
+          const parsedMessages = JSON.parse(savedMessages);
+          setMessages(parsedMessages);
+        } catch (e) {
+          console.error("Error parsing saved messages:", e);
+          setMessages([getWelcomeMessage()]);
+        }
+      } else {
+        setMessages([getWelcomeMessage()]);
+      }
     }
-  }, []);
+  }, [user]);
 
-  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (user && messages.length > 0) {
+      const messagesToSave = messages.slice(-20);
+      localStorage.setItem(`skilltrack-chat-${user.id}`, JSON.stringify(messagesToSave));
+    }
+  }, [messages, user]);
+
+  const getWelcomeMessage = (): ChatMessage => ({
+    id: crypto.randomUUID(),
+    content: "Hi there! I'm your SkillTrack AI assistant. Ask me anything about learning, skill development, or how to reach your goals faster.",
+    role: "assistant",
+    timestamp: new Date(),
+  });
+
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Focus input when chat is opened
   useEffect(() => {
     if (isOpen && !isMinimized && inputRef.current) {
       setTimeout(() => {
         inputRef.current?.focus();
-      }, 300);
+        autoResizeTextarea(inputRef.current);
+      }, 200);
     }
   }, [isOpen, isMinimized]);
 
@@ -64,6 +86,7 @@ export const useAIAssistant = () => {
 
   const expandChat = () => {
     setIsMinimized(false);
+    setTimeout(() => inputRef.current?.focus(), 200);
   };
 
   const sendMessage = async (e?: React.FormEvent) => {
@@ -72,7 +95,6 @@ export const useAIAssistant = () => {
     const trimmedPrompt = prompt.trim();
     if (!trimmedPrompt || isLoading) return;
 
-    // Add user message to chat
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
       content: trimmedPrompt,
@@ -83,11 +105,14 @@ export const useAIAssistant = () => {
     setMessages(prev => [...prev, userMessage]);
     setPrompt("");
     setIsLoading(true);
+    
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
 
     try {
       console.log("Sending message to skill-assistant function");
       
-      // Add placeholder message for streaming effect
       const placeholderId = crypto.randomUUID();
       setMessages(prev => [
         ...prev,
@@ -100,15 +125,13 @@ export const useAIAssistant = () => {
       ]);
       setIsStreaming(true);
 
-      // Get message history for context (last 10 messages)
       const history = messages
-        .slice(-10)
+        .slice(-3)
         .map(m => ({ 
           role: m.role, 
           content: m.content 
         }));
 
-      // Call the edge function
       const { data, error } = await supabase.functions.invoke("skill-assistant", {
         method: "POST",
         body: { 
@@ -127,7 +150,8 @@ export const useAIAssistant = () => {
         throw new Error("Invalid response from assistant");
       }
 
-      // Update the placeholder message with the actual response
+      setIsStreaming(false);
+      
       setMessages(prev => 
         prev.map(msg => 
           msg.id === placeholderId 
@@ -139,17 +163,15 @@ export const useAIAssistant = () => {
     } catch (error: any) {
       console.error("Error in sendMessage:", error);
       
-      toast.error("Failed to get a response. Please try again.");
+      toast.error("Assistant couldn't respond. Try again with a shorter question.");
       
-      // Remove the placeholder message
       setMessages(prev => prev.filter(msg => msg.content !== ""));
       
-      // Add error message
       setMessages(prev => [
         ...prev,
         {
           id: crypto.randomUUID(),
-          content: "I'm having trouble connecting right now. Please try again in a moment.",
+          content: "I'm having trouble processing that. Try asking a shorter, more specific question.",
           role: "assistant",
           timestamp: new Date(),
         },
@@ -161,14 +183,13 @@ export const useAIAssistant = () => {
   };
 
   const clearConversation = () => {
-    setMessages([
-      {
-        id: crypto.randomUUID(),
-        content: "Hi there! I'm your SkillTrack AI assistant. How can I help with your learning journey today?",
-        role: "assistant",
-        timestamp: new Date(),
-      },
-    ]);
+    setMessages([getWelcomeMessage()]);
+    toast.success("Conversation cleared");
+  };
+
+  const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setPrompt(e.target.value);
+    autoResizeTextarea(e.target);
   };
 
   return {
@@ -187,5 +208,6 @@ export const useAIAssistant = () => {
     expandChat,
     sendMessage,
     clearConversation,
+    handleTextareaChange,
   };
 };
