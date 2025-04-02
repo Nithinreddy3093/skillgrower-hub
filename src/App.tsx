@@ -9,6 +9,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { IntroAnimation } from "./components/IntroAnimation";
+import { AIAssistant } from "./components/ai-assistant/AIAssistant";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
 import Journal from "./pages/Journal";
@@ -113,6 +114,7 @@ const App = () => {
                     />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
+                  <AIAssistant />
                 </>
               )}
             </TooltipProvider>
