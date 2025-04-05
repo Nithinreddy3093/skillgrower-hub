@@ -135,14 +135,14 @@ export const useAIAssistant = () => {
           content: m.content 
         }));
 
+      // Fix: Remove responseType from FunctionInvokeOptions
       const { data, error } = await supabase.functions.invoke("skill-assistant", {
         method: "POST",
         body: { 
           message: trimmedPrompt,
           userId: user?.id,
           history
-        },
-        responseType: "json"
+        }
       });
 
       if (error) {
