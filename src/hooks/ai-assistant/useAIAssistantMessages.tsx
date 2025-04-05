@@ -64,6 +64,11 @@ export const useAIAssistantMessages = () => {
 
       const response = await sendMessageToAssistant(trimmedPrompt, user?.id, messageState.messages);
       
+      // Validate response content
+      if (!response || response.trim() === "") {
+        throw new Error("Empty response received from assistant");
+      }
+      
       setMessages(messageState.messages.map(msg => 
         msg.id === placeholderId 
           ? { ...msg, content: response } 
@@ -76,32 +81,48 @@ export const useAIAssistantMessages = () => {
     } catch (error: any) {
       console.error("Error in sendMessage:", error);
       
+      // Enhanced error handling with more specific messages
+      let errorMessage = "I'm having trouble answering that. Could you rephrase your question?";
+      let toastMessage = "Unable to get response. Try a different question.";
+      
       // Handle different error scenarios with appropriate messages
       if (error.message.includes("timeout") || error.message.includes("network")) {
-        if (messageState.retryCount < 2) {
-          toast.error("Connection issue. Retrying...");
+        toastMessage = messageState.retryCount < 2 
+          ? "Connection issue. Retrying..." 
+          : "Network issue persists. Please try again later.";
           
+        if (messageState.retryCount < 2) {
           // Remove empty message
           setMessages(messageState.messages.filter(msg => msg.content !== ""));
           setRetryCount(messageState.retryCount + 1);
           
           // Try again after a short delay
+          toast.error(toastMessage);
           setTimeout(() => {
             sendMessage();
           }, 1500);
           return;
         } else {
-          toast.error("Network issue persists. Please try again later.");
+          errorMessage = "I'm having trouble connecting right now. Please try again in a few minutes.";
         }
-      } else {
-        toast.error("Unable to get response. Try a different question.");
+      } else if (error.message.includes("API key")) {
+        errorMessage = "I'm currently experiencing a configuration issue. Please try again later.";
+        toastMessage = "AI service configuration issue. Please try again later.";
+      } else if (error.message.includes("rate limit")) {
+        errorMessage = "I've reached my usage limit. Please try again in a few minutes.";
+        toastMessage = "Usage limit reached. Please try again later.";
+      } else if (error.message.includes("empty response")) {
+        errorMessage = "I couldn't generate a good answer for that question. Could you try something more specific?";
+        toastMessage = "Couldn't generate a response. Try a more specific question.";
       }
+      
+      toast.error(toastMessage);
       
       setMessages([
         ...messageState.messages.filter(msg => msg.content !== ""),
         {
           id: crypto.randomUUID(),
-          content: "I'm having trouble answering that. Could you rephrase your question or try something more specific?",
+          content: errorMessage,
           role: "assistant",
           timestamp: new Date(),
         },

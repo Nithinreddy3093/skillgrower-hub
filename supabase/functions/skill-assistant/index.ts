@@ -10,6 +10,10 @@ const corsHeaders = {
 // Get the OpenAI API key from environment variables
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 
+// Constants for error handling and retries
+const MAX_RETRIES = 2;
+const RETRY_DELAY = 1000; // milliseconds
+
 serve(async (req) => {
   // CORS preflight request
   if (req.method === 'OPTIONS') {
@@ -19,6 +23,7 @@ serve(async (req) => {
   try {
     console.log("Received request to skill-assistant function");
     
+    // API key validation
     if (!OPENAI_API_KEY) {
       console.error("OpenAI API key is not configured");
       throw new Error("OpenAI API key is not configured");
@@ -84,70 +89,128 @@ serve(async (req) => {
     console.log("Calling OpenAI API...");
     console.log("Using model: gpt-4o");
     
-    // Try with a safe timeout for reliable performance
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    // Implement retry logic
+    let retryCount = 0;
+    let lastError = null;
 
-    try {
-      // Call OpenAI API with optimized parameters
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",     // More capable model for better understanding
-          messages,
-          temperature: 0.3,    // Lower temperature for more precise responses
-          max_tokens: 250,     // Increased slightly for more complete answers
-          presence_penalty: 0.2,
-          frequency_penalty: 0.5,
-          top_p: 0.95          // High focus on top tokens
-        }),
-        signal: controller.signal
-      });
+    while (retryCount <= MAX_RETRIES) {
+      try {
+        // Set up a safer timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+        
+        // Call OpenAI API with optimized parameters
+        const response = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${OPENAI_API_KEY}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "gpt-4o",     // More capable model for better understanding
+            messages,
+            temperature: 0.3,    // Lower temperature for more precise responses
+            max_tokens: 250,     // Increased slightly for more complete answers
+            presence_penalty: 0.2,
+            frequency_penalty: 0.5,
+            top_p: 0.95,         // High focus on top tokens
+            timeout: 30          // Optional timeout parameter
+          }),
+          signal: controller.signal
+        });
 
-      clearTimeout(timeoutId);
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        const error = await response.json();
-        console.error("OpenAI API error:", error);
-        throw new Error(error.error?.message || "Failed to get response from AI");
+        // Handle API errors with specific status codes
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("OpenAI API error:", errorData);
+          
+          // Handle different error types appropriately
+          if (response.status === 429) {
+            console.log("Rate limit exceeded, retrying after delay...");
+            if (retryCount < MAX_RETRIES) {
+              retryCount++;
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
+              continue;
+            }
+            throw new Error("Rate limit exceeded. Try again later.");
+          } else if (response.status === 401) {
+            throw new Error("Invalid API key. Please check your OpenAI API key.");
+          } else if (response.status === 404) {
+            throw new Error("The requested model was not found. Please check the model name.");
+          } else {
+            throw new Error(errorData.error?.message || "Failed to get response from AI");
+          }
+        }
+
+        const data = await response.json();
+        console.log("OpenAI response received successfully");
+        
+        // Validate response format
+        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+          throw new Error("Invalid response format from OpenAI API");
+        }
+        
+        const aiResponse = data.choices[0].message.content;
+        
+        // Validate response content
+        if (!aiResponse || aiResponse.trim() === "") {
+          throw new Error("Empty response from AI");
+        }
+
+        return new Response(
+          JSON.stringify({ response: aiResponse }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      } catch (fetchError) {
+        lastError = fetchError;
+        
+        // Only retry for certain errors
+        if (fetchError.name === 'AbortError') {
+          console.error("OpenAI API call timed out");
+          if (retryCount < MAX_RETRIES) {
+            console.log(`Retry attempt ${retryCount + 1} after timeout...`);
+            retryCount++;
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
+            continue;
+          }
+          throw new Error("The request timed out after multiple attempts. Try a shorter question for faster response.");
+        }
+        
+        // For other errors, don't retry
+        break;
       }
-
-      const data = await response.json();
-      console.log("OpenAI response received successfully");
-      
-      if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-        throw new Error("Invalid response format from OpenAI API");
-      }
-      
-      const aiResponse = data.choices[0].message.content;
-
-      return new Response(
-        JSON.stringify({ response: aiResponse }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    } catch (fetchError) {
-      clearTimeout(timeoutId);
-      if (fetchError.name === 'AbortError') {
-        console.error("OpenAI API call timed out");
-        throw new Error("The request timed out. Try a shorter question for faster response.");
-      }
-      throw fetchError;
     }
+    
+    // If we got here, all retries failed
+    throw lastError || new Error("Failed to get a response after multiple attempts");
+    
   } catch (error) {
     console.error("Error in skill-assistant function:", error);
     
+    // Provide more specific error messages based on error type
+    let errorMessage = error.message || "An unexpected error occurred";
+    let statusCode = 500;
+    
+    if (errorMessage.includes("API key")) {
+      statusCode = 401;
+      errorMessage = "API key issue: " + errorMessage;
+    } else if (errorMessage.includes("rate limit") || errorMessage.includes("too many requests")) {
+      statusCode = 429;
+      errorMessage = "Rate limit exceeded: " + errorMessage;
+    } else if (errorMessage.includes("model")) {
+      errorMessage = "Model issue: " + errorMessage;
+    }
+    
     return new Response(
       JSON.stringify({ 
-        error: error.message || "An unexpected error occurred",
-        errorCode: error.code || 500,
+        error: errorMessage,
+        errorCode: statusCode,
         timestamp: new Date().toISOString()
       }),
       { 
-        status: 500,
+        status: statusCode,
         headers: { ...corsHeaders, "Content-Type": "application/json" }
       }
     );
