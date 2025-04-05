@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Bot, User } from "lucide-react";
-import { ChatMessage as MessageType } from "@/hooks/useAIAssistant";
+import { ChatMessage as MessageType } from "@/hooks/ai-assistant/types";
 import { cn } from "@/lib/utils";
 
 interface ChatMessageProps {
