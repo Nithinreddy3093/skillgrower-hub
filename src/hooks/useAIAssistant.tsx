@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +19,7 @@ export const useAIAssistant = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
@@ -125,8 +127,9 @@ export const useAIAssistant = () => {
       ]);
       setIsStreaming(true);
 
+      // Provide better context by sending more message history
       const history = messages
-        .slice(-3)
+        .slice(-5)
         .map(m => ({ 
           role: m.role, 
           content: m.content 
@@ -138,7 +141,8 @@ export const useAIAssistant = () => {
           message: trimmedPrompt,
           userId: user?.id,
           history
-        }
+        },
+        responseType: "json"
       });
 
       if (error) {
@@ -151,6 +155,7 @@ export const useAIAssistant = () => {
       }
 
       setIsStreaming(false);
+      setRetryCount(0);
       
       setMessages(prev => 
         prev.map(msg => 
@@ -163,7 +168,26 @@ export const useAIAssistant = () => {
     } catch (error: any) {
       console.error("Error in sendMessage:", error);
       
-      toast.error("Assistant couldn't respond. Try again with a shorter question.");
+      // Handle different error scenarios with appropriate messages
+      if (error.message.includes("timeout") || error.message.includes("network")) {
+        if (retryCount < 2) {
+          toast.error("Connection issue. Retrying...");
+          setRetryCount(prev => prev + 1);
+          
+          // Remove empty message
+          setMessages(prev => prev.filter(msg => msg.content !== ""));
+          
+          // Try again after a short delay
+          setTimeout(() => {
+            sendMessage();
+          }, 1500);
+          return;
+        } else {
+          toast.error("Network issue persists. Please try again later.");
+        }
+      } else {
+        toast.error("Unable to get response. Try a different question.");
+      }
       
       setMessages(prev => prev.filter(msg => msg.content !== ""));
       
@@ -171,7 +195,7 @@ export const useAIAssistant = () => {
         ...prev,
         {
           id: crypto.randomUUID(),
-          content: "I'm having trouble processing that. Try asking a shorter, more specific question.",
+          content: "I'm having trouble answering that. Could you rephrase your question or try something more specific?",
           role: "assistant",
           timestamp: new Date(),
         },
@@ -184,6 +208,7 @@ export const useAIAssistant = () => {
 
   const clearConversation = () => {
     setMessages([getWelcomeMessage()]);
+    setRetryCount(0);
     toast.success("Conversation cleared");
   };
 
