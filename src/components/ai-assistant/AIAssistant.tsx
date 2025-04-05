@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import { Bot, X, Minimize2, Maximize2, Send, Trash2, MessagesSquare, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIAssistant } from "@/hooks/useAIAssistant";
-import { ChatMessage } from "@/hooks/ai-assistant/types";
-import { ChatMessage as ChatMessageComponent } from "./ChatMessage";
+import { ChatMessage as ChatMessageType } from "@/hooks/ai-assistant/types";
+import { ChatMessage } from "./ChatMessage";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
