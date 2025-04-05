@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Bot, X, Minimize2, Maximize2, Send, Trash2, MessagesSquare, ZapFast } from "lucide-react";
+import { Bot, X, Minimize2, Maximize2, Send, Trash2, MessagesSquare, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIAssistant } from "@/hooks/useAIAssistant";
 import { ChatMessage } from "./ChatMessage";
@@ -78,7 +78,7 @@ export const AIAssistant = () => {
                 <div className="flex items-center">
                   <h3 className="font-medium text-sm">SkillTrack Assistant</h3>
                   <div className="flex items-center ml-1.5">
-                    <ZapFast size={12} className="text-yellow-300 mr-0.5" />
+                    <Zap size={12} className="text-yellow-300 mr-0.5" />
                     <span className="text-xs text-yellow-200">Fast Mode</span>
                   </div>
                 </div>
