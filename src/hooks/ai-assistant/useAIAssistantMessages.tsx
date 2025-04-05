@@ -3,13 +3,13 @@ import { useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ChatMessage } from "./types";
-import { autoResizeTextarea, saveMessages } from "./utils";
+import { autoResizeTextarea } from "./utils";
 import { sendMessageToAssistant } from "./api";
 import { useAIAssistantState } from "./useAIAssistantState";
 
 export const useAIAssistantMessages = () => {
   const {
-    state,
+    messageState,
     setPrompt,
     setMessages,
     setIsLoading,
@@ -30,8 +30,8 @@ export const useAIAssistantMessages = () => {
   const sendMessage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
-    const trimmedPrompt = state.prompt.trim();
-    if (!trimmedPrompt || state.isLoading) return;
+    const trimmedPrompt = messageState.prompt.trim();
+    if (!trimmedPrompt || messageState.isLoading) return;
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -40,7 +40,7 @@ export const useAIAssistantMessages = () => {
       timestamp: new Date(),
     };
     
-    setMessages([...state.messages, userMessage]);
+    setMessages([...messageState.messages, userMessage]);
     setPrompt("");
     setIsLoading(true);
     
@@ -51,7 +51,7 @@ export const useAIAssistantMessages = () => {
     try {
       const placeholderId = crypto.randomUUID();
       setMessages([
-        ...state.messages,
+        ...messageState.messages,
         userMessage,
         {
           id: placeholderId,
@@ -62,9 +62,9 @@ export const useAIAssistantMessages = () => {
       ]);
       setIsStreaming(true);
 
-      const response = await sendMessageToAssistant(trimmedPrompt, user?.id, state.messages);
+      const response = await sendMessageToAssistant(trimmedPrompt, user?.id, messageState.messages);
       
-      setMessages(state.messages.map(msg => 
+      setMessages(messageState.messages.map(msg => 
         msg.id === placeholderId 
           ? { ...msg, content: response } 
           : msg
@@ -78,12 +78,12 @@ export const useAIAssistantMessages = () => {
       
       // Handle different error scenarios with appropriate messages
       if (error.message.includes("timeout") || error.message.includes("network")) {
-        if (state.retryCount < 2) {
+        if (messageState.retryCount < 2) {
           toast.error("Connection issue. Retrying...");
           
           // Remove empty message
-          setMessages(state.messages.filter(msg => msg.content !== ""));
-          setRetryCount(state.retryCount + 1);
+          setMessages(messageState.messages.filter(msg => msg.content !== ""));
+          setRetryCount(messageState.retryCount + 1);
           
           // Try again after a short delay
           setTimeout(() => {
@@ -98,7 +98,7 @@ export const useAIAssistantMessages = () => {
       }
       
       setMessages([
-        ...state.messages.filter(msg => msg.content !== ""),
+        ...messageState.messages.filter(msg => msg.content !== ""),
         {
           id: crypto.randomUUID(),
           content: "I'm having trouble answering that. Could you rephrase your question or try something more specific?",
@@ -118,10 +118,10 @@ export const useAIAssistantMessages = () => {
   };
 
   return {
-    messages: state.messages,
-    prompt: state.prompt,
-    isLoading: state.isLoading,
-    isStreaming: state.isStreaming,
+    messages: messageState.messages,
+    prompt: messageState.prompt,
+    isLoading: messageState.isLoading,
+    isStreaming: messageState.isStreaming,
     inputRef,
     messagesEndRef,
     sendMessage,

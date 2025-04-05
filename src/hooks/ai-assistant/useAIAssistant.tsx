@@ -1,19 +1,25 @@
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getSavedMessages, saveMessages, getWelcomeMessage } from "./utils";
+import { getSavedMessages, saveMessages } from "./utils";
 import { useAIAssistantState } from "./useAIAssistantState";
+import { useAIAssistantUIState } from "./useAIAssistantUIState";
 import { useAIAssistantMessages } from "./useAIAssistantMessages";
 
 export const useAIAssistant = () => {
-  // Create state hook instance
+  // Create UI state hook instance
   const {
-    state,
-    setPrompt,
+    uiState,
     setIsOpen,
     toggleChat,
     minimizeChat,
-    expandChat,
+    expandChat
+  } = useAIAssistantUIState();
+  
+  // Create message state hook instance
+  const {
+    messageState,
+    setPrompt,
     setMessages,
     clearConversation
   } = useAIAssistantState();
@@ -42,20 +48,20 @@ export const useAIAssistant = () => {
   // Save messages to local storage when they change
   useEffect(() => {
     if (user) {
-      saveMessages(user.id, state.messages);
+      saveMessages(user.id, messageState.messages);
     }
-  }, [state.messages, user]);
+  }, [messageState.messages, user]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [state.messages]);
+  }, [messageState.messages]);
 
   // Auto focus input when chat is opened or expanded
   useEffect(() => {
-    if (state.isOpen && !state.isMinimized && inputRef.current) {
+    if (uiState.isOpen && !uiState.isMinimized && inputRef.current) {
       setTimeout(() => {
         inputRef.current?.focus();
         if (inputRef.current) {
@@ -64,10 +70,12 @@ export const useAIAssistant = () => {
         }
       }, 200);
     }
-  }, [state.isOpen, state.isMinimized]);
+  }, [uiState.isOpen, uiState.isMinimized]);
 
   return {
-    ...state,
+    isOpen: uiState.isOpen,
+    isMinimized: uiState.isMinimized,
+    ...messageState,
     messagesEndRef,
     inputRef,
     setIsOpen,

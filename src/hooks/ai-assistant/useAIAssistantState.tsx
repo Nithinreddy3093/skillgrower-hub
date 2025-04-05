@@ -1,12 +1,18 @@
 
 import { useState } from "react";
-import { AIAssistantState } from "./types";
+import { ChatMessage } from "./types";
 import { getWelcomeMessage } from "./utils";
 
+export interface AIAssistantMessageState {
+  prompt: string;
+  messages: ChatMessage[];
+  isLoading: boolean;
+  isStreaming: boolean;
+  retryCount: number;
+}
+
 export const useAIAssistantState = () => {
-  const [state, setState] = useState<AIAssistantState>({
-    isOpen: false,
-    isMinimized: false,
+  const [messageState, setMessageState] = useState<AIAssistantMessageState>({
     prompt: "",
     messages: [],
     isLoading: false,
@@ -15,71 +21,42 @@ export const useAIAssistantState = () => {
   });
   
   const setPrompt = (value: string) => {
-    setState(prev => ({
+    setMessageState(prev => ({
       ...prev,
       prompt: value
     }));
   };
-
-  const setIsOpen = (value: boolean) => {
-    setState(prev => ({
-      ...prev,
-      isOpen: value
-    }));
-  };
   
-  const toggleChat = () => {
-    setState(prev => ({
-      ...prev,
-      isOpen: !prev.isOpen,
-      isMinimized: false
-    }));
-  };
-
-  const minimizeChat = () => {
-    setState(prev => ({
-      ...prev,
-      isMinimized: true
-    }));
-  };
-
-  const expandChat = () => {
-    setState(prev => ({
-      ...prev,
-      isMinimized: false
-    }));
-  };
-  
-  const setMessages = (messages: AIAssistantState["messages"]) => {
-    setState(prev => ({
+  const setMessages = (messages: AIAssistantMessageState["messages"]) => {
+    setMessageState(prev => ({
       ...prev,
       messages
     }));
   };
 
   const setIsLoading = (isLoading: boolean) => {
-    setState(prev => ({
+    setMessageState(prev => ({
       ...prev,
       isLoading
     }));
   };
 
   const setIsStreaming = (isStreaming: boolean) => {
-    setState(prev => ({
+    setMessageState(prev => ({
       ...prev,
       isStreaming
     }));
   };
 
   const setRetryCount = (retryCount: number) => {
-    setState(prev => ({
+    setMessageState(prev => ({
       ...prev,
       retryCount
     }));
   };
   
   const clearConversation = () => {
-    setState(prev => ({
+    setMessageState(prev => ({
       ...prev,
       messages: [getWelcomeMessage()],
       retryCount: 0
@@ -87,12 +64,8 @@ export const useAIAssistantState = () => {
   };
 
   return {
-    state,
+    messageState,
     setPrompt,
-    setIsOpen,
-    toggleChat,
-    minimizeChat,
-    expandChat,
     setMessages,
     setIsLoading,
     setIsStreaming,
