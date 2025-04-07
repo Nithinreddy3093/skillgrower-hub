@@ -26,21 +26,27 @@ export const sendMessageToAssistant = async (
           content: m.content 
         }));
 
-      // Set up a timeout for the request
-      const abortController = new AbortController();
-      const timeoutId = setTimeout(() => abortController.abort(), 20000);
+      // Use a Promise.race with a timeout promise instead of AbortController
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Request timed out")), 20000);
+      });
 
-      const { data, error } = await supabase.functions.invoke("skill-assistant", {
+      const responsePromise = supabase.functions.invoke("skill-assistant", {
         method: "POST",
         body: { 
           message: userMessage,
           userId,
           history: messageHistory
-        },
-        signal: abortController.signal
+        }
       });
-
-      clearTimeout(timeoutId);
+      
+      // Race between the timeout and the actual request
+      const { data, error } = await Promise.race([
+        responsePromise,
+        timeoutPromise.then(() => {
+          throw new Error("Request timed out");
+        })
+      ]) as any;
 
       if (error) {
         console.error("Error from skill-assistant function:", error);
