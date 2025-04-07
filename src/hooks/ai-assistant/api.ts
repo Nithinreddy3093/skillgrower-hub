@@ -85,7 +85,7 @@ export const sendMessageToAssistant = async (
       lastError = error;
       
       // Only retry specific errors
-      if (error.name === "AbortError" || error.message?.includes("timeout") || error.message?.includes("network")) {
+      if (error.message?.includes("timeout") || error.message?.includes("network")) {
         if (retryCount < MAX_RETRIES) {
           retryCount++;
           continue;

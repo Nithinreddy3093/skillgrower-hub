@@ -62,6 +62,12 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				// Add extended grays for dark mode to improve visibility
+				gray: {
+					750: '#2a2e37', // Between gray-700 and gray-800
+					850: '#1a1d24', // Between gray-800 and gray-900
+					950: '#0f1117', // Darker than gray-900
 				}
 			},
 			borderRadius: {
