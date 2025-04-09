@@ -16,6 +16,7 @@ import Journal from "./pages/Journal";
 import Resources from "./pages/Resources";
 import Collaborate from "./pages/Collaborate";
 import Profile from "./pages/Profile";
+import Quiz from "./pages/Quiz";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -101,6 +102,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <Collaborate />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/quiz"
+                      element={
+                        <ProtectedRoute>
+                          <Quiz />
                         </ProtectedRoute>
                       }
                     />
