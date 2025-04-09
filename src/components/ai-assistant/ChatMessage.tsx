@@ -111,12 +111,12 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
         "max-w-[85%] p-3 rounded-lg text-sm",
         isUser 
           ? "bg-indigo-600 text-white rounded-tr-none" 
-          : "bg-gray-100 dark:bg-gray-750 text-gray-800 dark:text-gray-150 rounded-tl-none" // Improved contrast
+          : "bg-gray-100 dark:bg-gray-750 text-gray-800 dark:text-white rounded-tl-none" // Improved contrast from gray-150 to white
       )}>
         {isUser ? (
           <p>{message.content}</p>
         ) : (
-          <div className="whitespace-pre-wrap dark-text-primary">
+          <div className="whitespace-pre-wrap text-gray-800 dark:text-white">
             {formatContent(message.content)}
             {isStreaming && message.content === "" && (
               <span className={`${cursorVisible ? 'opacity-100' : 'opacity-0'} transition-opacity`}>▋</span>
