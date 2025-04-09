@@ -71,7 +71,7 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
           return (
             <div key={j} className="flex items-start gap-1 mt-1 ml-1">
               <span className="text-indigo-500 dark:text-indigo-300 font-bold mt-0.5">•</span>
-              <span>{line.substring(2)}</span>
+              <span className="dark:text-gray-150">{line.substring(2)}</span>
             </div>
           );
         }
@@ -81,11 +81,11 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
           return (
             <div key={j} className="flex items-start gap-1.5 mt-1 ml-1">
               <span className="text-indigo-500 dark:text-indigo-300 font-medium">{numberedListMatch[1]}.</span>
-              <span>{numberedListMatch[2]}</span>
+              <span className="dark:text-gray-150">{numberedListMatch[2]}</span>
             </div>
           );
         }
-        return <div key={j}>{line || <br />}</div>;
+        return <div key={j} className="dark:text-gray-150">{line || <br />}</div>;
       });
     });
   };
@@ -111,12 +111,12 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
         "max-w-[85%] p-3 rounded-lg text-sm",
         isUser 
           ? "bg-indigo-600 text-white rounded-tr-none" 
-          : "bg-gray-100 dark:bg-gray-750 text-gray-800 dark:text-gray-100 rounded-tl-none"
+          : "bg-gray-100 dark:bg-gray-750 text-gray-800 dark:text-gray-150 rounded-tl-none" // Improved contrast
       )}>
         {isUser ? (
           <p>{message.content}</p>
         ) : (
-          <div className="whitespace-pre-wrap dark-high-contrast">
+          <div className="whitespace-pre-wrap dark-text-primary">
             {formatContent(message.content)}
             {isStreaming && message.content === "" && (
               <span className={`${cursorVisible ? 'opacity-100' : 'opacity-0'} transition-opacity`}>▋</span>

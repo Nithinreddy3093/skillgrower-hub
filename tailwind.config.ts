@@ -63,11 +63,15 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Add extended grays for dark mode to improve visibility
+				// Extended grays for better dark mode visibility
 				gray: {
 					750: '#2a2e37', // Between gray-700 and gray-800
 					850: '#1a1d24', // Between gray-800 and gray-900
 					950: '#0f1117', // Darker than gray-900
+					// Additional lighter grays for better text visibility in dark mode
+					150: '#e5e7eb', // Very light gray for high contrast text in dark mode
+					250: '#d1d5db', // Light gray for secondary text in dark mode
+					350: '#9ca3af'  // Medium gray for tertiary text in dark mode
 				}
 			},
 			borderRadius: {
