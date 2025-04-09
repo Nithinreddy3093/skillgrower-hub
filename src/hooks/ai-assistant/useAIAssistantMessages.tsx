@@ -1,5 +1,5 @@
 
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ChatMessage } from "./types";
@@ -21,6 +21,16 @@ export const useAIAssistantMessages = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
+
+  // Focus the input field whenever needed
+  useEffect(() => {
+    if (inputRef.current && !messageState.isLoading) {
+      // Short timeout to allow animations to complete
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 100);
+    }
+  }, [messageState.isLoading]);
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);

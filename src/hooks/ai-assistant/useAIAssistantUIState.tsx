@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export interface AIAssistantUIState {
   isOpen: boolean;
@@ -12,34 +12,58 @@ export const useAIAssistantUIState = () => {
     isMinimized: false
   });
   
-  const setIsOpen = (value: boolean) => {
+  const setIsOpen = useCallback((value: boolean) => {
     setUIState(prev => ({
       ...prev,
-      isOpen: value
+      isOpen: value,
+      // If we're opening, make sure it's not minimized
+      isMinimized: value ? false : prev.isMinimized
     }));
-  };
+  }, []);
   
-  const toggleChat = () => {
+  const toggleChat = useCallback(() => {
     setUIState(prev => ({
       ...prev,
       isOpen: !prev.isOpen,
-      isMinimized: false
+      isMinimized: false // Always expand when toggling
     }));
-  };
+  }, []);
 
-  const minimizeChat = () => {
+  const minimizeChat = useCallback(() => {
     setUIState(prev => ({
       ...prev,
       isMinimized: true
     }));
-  };
+  }, []);
 
-  const expandChat = () => {
+  const expandChat = useCallback(() => {
     setUIState(prev => ({
       ...prev,
       isMinimized: false
     }));
-  };
+  }, []);
+
+  // Keyboard shortcut to toggle chat (Alt+/)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && e.key === '/') {
+        e.preventDefault();
+        toggleChat();
+      }
+      // ESC key to close or minimize
+      if (e.key === 'Escape' && uiState.isOpen) {
+        e.preventDefault();
+        if (!uiState.isMinimized) {
+          minimizeChat();
+        } else {
+          setIsOpen(false);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [toggleChat, minimizeChat, uiState, setIsOpen]);
 
   return {
     uiState,

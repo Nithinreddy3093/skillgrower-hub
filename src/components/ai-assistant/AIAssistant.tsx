@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { Bot, X, Minimize2, Maximize2, Send, Trash2, MessagesSquare, Zap } from "lucide-react";
+import { Bot, X, Minimize2, Maximize2, Send, Trash2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIAssistant } from "@/hooks/useAIAssistant";
 import { ChatMessage as ChatMessageType } from "@/hooks/ai-assistant/types";
@@ -76,13 +76,7 @@ export const AIAssistant = () => {
             <div className="p-3 bg-indigo-600 dark:bg-indigo-800 text-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Bot size={18} />
-                <div className="flex items-center">
-                  <h3 className="font-medium text-sm">SkillTrack Assistant</h3>
-                  <div className="flex items-center ml-1.5">
-                    <Zap size={12} className="text-yellow-300 mr-0.5" />
-                    <span className="text-xs text-yellow-200">Fast Mode</span>
-                  </div>
-                </div>
+                <h3 className="font-medium text-sm">SkillTrack Assistant</h3>
               </div>
               <div className="flex items-center space-x-2">
                 {isMinimized ? (
@@ -126,18 +120,30 @@ export const AIAssistant = () => {
               <>
                 {/* Messages area */}
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                  {messages.map((message) => (
-                    <ChatMessage 
-                      key={message.id} 
-                      message={message} 
-                      isStreaming={isStreaming && message.content === ""}
-                    />
-                  ))}
+                  {messages.length === 0 ? (
+                    <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-center p-4">
+                      <div>
+                        <Bot size={36} className="mx-auto mb-2 text-indigo-500 opacity-80" />
+                        <p>Ask me anything about learning, skill development, or how to reach your goals faster.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    messages.map((message) => (
+                      <ChatMessage 
+                        key={message.id} 
+                        message={message} 
+                        isStreaming={isStreaming && message.content === ""}
+                      />
+                    ))
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
 
                 {/* Input area */}
-                <form onSubmit={sendMessage} className="p-3 border-t dark:border-gray-700 flex items-end gap-2">
+                <form 
+                  onSubmit={sendMessage} 
+                  className="p-3 border-t dark:border-gray-700 flex items-end gap-2"
+                >
                   <textarea
                     ref={inputRef}
                     value={prompt}
@@ -149,7 +155,7 @@ export const AIAssistant = () => {
                       }
                     }}
                     placeholder="Ask for quick learning tips..."
-                    className="flex-1 border dark:border-gray-700 rounded-md p-2 resize-none outline-none text-sm bg-transparent max-h-32 min-h-[42px]"
+                    className="flex-1 border dark:border-gray-700 rounded-md p-2 resize-none outline-none text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[42px] max-h-32"
                     disabled={isLoading}
                     rows={1}
                   />
