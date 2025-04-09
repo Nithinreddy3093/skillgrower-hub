@@ -1,5 +1,5 @@
 
-import { Home, Target, BookOpen, Library, Users, LogOut, User } from "lucide-react";
+import { Home, Target, BookOpen, Library, Users, LogOut, User, BrainCircuit } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -51,6 +51,10 @@ export const Navigation = () => {
             <Link to="/collaborate" className="flex items-center space-x-1 hover:text-indigo-100 transition">
               <Users size={20} />
               <span className="hidden sm:inline">Collaborate</span>
+            </Link>
+            <Link to="/quiz" className="flex items-center space-x-1 hover:text-indigo-100 transition">
+              <BrainCircuit size={20} />
+              <span className="hidden sm:inline">Quiz</span>
             </Link>
           </div>
         </div>

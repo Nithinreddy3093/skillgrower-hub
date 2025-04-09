@@ -45,7 +45,7 @@ export const AIAssistant = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             whileHover={{ scale: 1.05 }}
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors z-50"
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors z-50"
             onClick={toggleChat}
             aria-label="Open AI Assistant"
           >
@@ -73,10 +73,10 @@ export const AIAssistant = () => {
             )}
           >
             {/* Header */}
-            <div className="p-3 bg-indigo-600 dark:bg-indigo-800 text-white flex items-center justify-between">
+            <div className="p-3 bg-green-600 dark:bg-green-800 text-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Bot size={18} />
-                <h3 className="font-medium text-sm">SkillTrack Assistant</h3>
+                <h3 className="font-medium text-sm">Gemini AI Assistant</h3>
               </div>
               <div className="flex items-center space-x-2">
                 {isMinimized ? (
@@ -123,8 +123,9 @@ export const AIAssistant = () => {
                   {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-center p-4">
                       <div>
-                        <Bot size={36} className="mx-auto mb-2 text-indigo-500 opacity-80" />
+                        <Bot size={36} className="mx-auto mb-2 text-green-500 opacity-80" />
                         <p>Ask me anything about learning, skill development, or how to reach your goals faster.</p>
+                        <p className="text-xs mt-2 text-gray-400">Powered by Google Gemini AI</p>
                       </div>
                     </div>
                   ) : (
@@ -165,7 +166,7 @@ export const AIAssistant = () => {
                       "flex-shrink-0 h-10 w-10 p-0",
                       isLoading 
                         ? "bg-gray-400 cursor-not-allowed" 
-                        : "bg-indigo-600 hover:bg-indigo-700"
+                        : "bg-green-600 hover:bg-green-700"
                     )}
                     disabled={isLoading || !prompt.trim()}
                     aria-label="Send message"

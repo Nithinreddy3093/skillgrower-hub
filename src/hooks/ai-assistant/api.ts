@@ -11,7 +11,7 @@ export const sendMessageToAssistant = async (
   userId: string | undefined, 
   history: ChatMessage[]
 ) => {
-  console.log("Sending message to skill-assistant function");
+  console.log("Sending message to skill-assistant-gemini function");
   
   let retryCount = 0;
   let lastError: Error | null = null;
@@ -31,7 +31,7 @@ export const sendMessageToAssistant = async (
         setTimeout(() => reject(new Error("Request timed out")), 20000);
       });
 
-      const responsePromise = supabase.functions.invoke("skill-assistant", {
+      const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
         method: "POST",
         body: { 
           message: userMessage,
@@ -49,7 +49,7 @@ export const sendMessageToAssistant = async (
       ]) as any;
 
       if (error) {
-        console.error("Error from skill-assistant function:", error);
+        console.error("Error from skill-assistant-gemini function:", error);
         
         // Handle quota exceeded errors
         if (error.message?.includes("quota") || 
@@ -93,7 +93,7 @@ export const sendMessageToAssistant = async (
       
       // Special handling for quota errors
       if (error.message?.includes("quota") || error.message?.includes("insufficient")) {
-        console.error("OpenAI quota exceeded:", error);
+        console.error("API quota exceeded:", error);
         throw new Error("AI service quota exceeded. Please try again later.");
       }
       

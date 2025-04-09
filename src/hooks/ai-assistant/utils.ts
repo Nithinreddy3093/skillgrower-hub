@@ -10,7 +10,7 @@ export const autoResizeTextarea = (element: HTMLTextAreaElement | null) => {
 
 export const getWelcomeMessage = (): ChatMessage => ({
   id: crypto.randomUUID(),
-  content: "Hi there! I'm your SkillTrack AI assistant. Ask me anything about learning, skill development, or how to reach your goals faster.",
+  content: "Hi there! I'm your SkillTrack AI assistant powered by Google Gemini. Ask me anything about learning, skill development, or how to reach your goals faster.",
   role: "assistant",
   timestamp: new Date(),
 });

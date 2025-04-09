@@ -53,7 +53,7 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
             href={linkUrl} 
             target="_blank"
             rel="noopener noreferrer"
-            className="text-indigo-600 dark:text-indigo-300 underline hover:text-indigo-800 dark:hover:text-indigo-200"
+            className="text-green-600 dark:text-green-300 underline hover:text-green-800 dark:hover:text-green-200"
           >
             {linkText}
           </a>
@@ -75,7 +75,7 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
         if (line.trim().startsWith('- ')) {
           return (
             <div key={j} className="flex items-start gap-1 mt-1 ml-1">
-              <span className="text-indigo-500 dark:text-indigo-300 font-bold mt-0.5">•</span>
+              <span className="text-green-500 dark:text-green-300 font-bold mt-0.5">•</span>
               <span className="dark:text-gray-150">{line.substring(2)}</span>
             </div>
           );
@@ -85,7 +85,7 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
         if (numberedListMatch) {
           return (
             <div key={j} className="flex items-start gap-1.5 mt-1 ml-1">
-              <span className="text-indigo-500 dark:text-indigo-300 font-medium">{numberedListMatch[1]}.</span>
+              <span className="text-green-500 dark:text-green-300 font-medium">{numberedListMatch[1]}.</span>
               <span className="dark:text-gray-150">{numberedListMatch[2]}</span>
             </div>
           );
@@ -112,8 +112,8 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
     >
       {/* Avatar for assistant message */}
       {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center flex-shrink-0">
-          <Bot size={16} className="text-indigo-600 dark:text-indigo-300" />
+        <div className="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center flex-shrink-0">
+          <Bot size={16} className="text-green-600 dark:text-green-300" />
         </div>
       )}
       
@@ -121,8 +121,8 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
       <div className={cn(
         "max-w-[85%] p-3 rounded-lg text-sm",
         isUser 
-          ? "bg-indigo-600 text-white rounded-tr-none" 
-          : "bg-gray-100 dark:bg-gray-750 text-gray-800 dark:text-white rounded-tl-none" // Improved contrast from gray-150 to white
+          ? "bg-green-600 text-white rounded-tr-none" 
+          : "bg-gray-100 dark:bg-gray-750 text-gray-800 dark:text-white rounded-tl-none"
       )}>
         {isUser ? (
           <p>{message.content}</p>
@@ -138,7 +138,7 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
 
       {/* Avatar for user message */}
       {isUser && (
-        <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 rounded-full bg-green-600 flex items-center justify-center flex-shrink-0">
           <User size={16} className="text-white" />
         </div>
       )}
