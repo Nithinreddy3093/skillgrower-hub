@@ -36,6 +36,11 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
 
   // Format text with special handling for links, bullet points, and lists
   const formatContent = (text: string) => {
+    // Check if this is an error message
+    const isErrorMessage = text.includes("I'm having trouble") || 
+                           text.includes("error") ||
+                           text.includes("issue");
+
     // Process markdown links [text](url)
     const withLinks = text.split(/(\[([^\]]+)\]\(([^)]+)\))/).map((part, index) => {
       // Every third part is a link match
@@ -85,6 +90,12 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
             </div>
           );
         }
+        
+        // Apply error styling for error messages
+        if (isErrorMessage) {
+          return <div key={j} className="dark:text-amber-300 text-amber-600 font-medium">{line || <br />}</div>;
+        }
+        
         return <div key={j} className="dark:text-gray-150">{line || <br />}</div>;
       });
     });

@@ -86,7 +86,7 @@ export const useAIAssistantMessages = () => {
       let toastMessage = "Unable to get response. Try a different question.";
       
       // Handle different error scenarios with appropriate messages
-      if (error.message.includes("timeout") || error.message.includes("network")) {
+      if (error.message?.includes("timeout") || error.message?.includes("network")) {
         toastMessage = messageState.retryCount < 2 
           ? "Connection issue. Retrying..." 
           : "Network issue persists. Please try again later.";
@@ -105,13 +105,13 @@ export const useAIAssistantMessages = () => {
         } else {
           errorMessage = "I'm having trouble connecting right now. Please try again in a few minutes.";
         }
-      } else if (error.message.includes("API key")) {
-        errorMessage = "I'm currently experiencing a configuration issue. Please try again later.";
-        toastMessage = "AI service configuration issue. Please try again later.";
-      } else if (error.message.includes("rate limit")) {
+      } else if (error.message?.includes("API key") || error.message?.includes("quota") || error.message?.includes("insufficient")) {
+        errorMessage = "Our AI service is currently unavailable. The team has been notified and is working to fix this issue.";
+        toastMessage = "AI service temporarily unavailable. Please try again later.";
+      } else if (error.message?.includes("rate limit")) {
         errorMessage = "I've reached my usage limit. Please try again in a few minutes.";
         toastMessage = "Usage limit reached. Please try again later.";
-      } else if (error.message.includes("empty response")) {
+      } else if (error.message?.includes("empty response")) {
         errorMessage = "I couldn't generate a good answer for that question. Could you try something more specific?";
         toastMessage = "Couldn't generate a response. Try a more specific question.";
       }

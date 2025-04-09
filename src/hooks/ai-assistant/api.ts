@@ -51,6 +51,13 @@ export const sendMessageToAssistant = async (
       if (error) {
         console.error("Error from skill-assistant function:", error);
         
+        // Handle quota exceeded errors
+        if (error.message?.includes("quota") || 
+            error.message?.includes("insufficient") ||
+            error.response?.status === 429) {
+          throw new Error("AI service quota exceeded. Please try again later.");
+        }
+        
         // Check for specific error types that might benefit from retrying
         if (error.message?.includes("timeout") || 
             error.message?.includes("network") || 
@@ -83,6 +90,12 @@ export const sendMessageToAssistant = async (
       return data.response;
     } catch (error: any) {
       lastError = error;
+      
+      // Special handling for quota errors
+      if (error.message?.includes("quota") || error.message?.includes("insufficient")) {
+        console.error("OpenAI quota exceeded:", error);
+        throw new Error("AI service quota exceeded. Please try again later.");
+      }
       
       // Only retry specific errors
       if (error.message?.includes("timeout") || error.message?.includes("network")) {
