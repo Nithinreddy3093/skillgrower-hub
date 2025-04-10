@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { QuestionCard } from "@/components/quiz/QuizQuestion";
@@ -6,7 +5,7 @@ import { QuizResults } from "@/components/quiz/QuizResults";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { QuizQuestion, QuizState, QuestionDifficulty } from "@/components/quiz/types";
+import { QuizQuestion, QuizState, QuestionDifficulty, ResourceSuggestion } from "@/components/quiz/types";
 import { Loader2, BrainCircuit } from "lucide-react";
 import { generateQuizQuestion } from "@/hooks/ai-assistant/api";
 import { toast } from "sonner";
@@ -20,6 +19,149 @@ const topicOptions = [
   { id: "ai", name: "Artificial Intelligence" },
   { id: "python", name: "Python" }
 ];
+
+const resourcesByTopic: Record<string, ResourceSuggestion[]> = {
+  dsa: [
+    {
+      title: "Introduction to Algorithms",
+      type: "course",
+      description: "Comprehensive course covering fundamental algorithms and data structures",
+      url: "https://ocw.mit.edu/courses/electrical-engineering-and-computer-science/6-006-introduction-to-algorithms-fall-2011/"
+    },
+    {
+      title: "Data Structures Visualization",
+      type: "article",
+      description: "Interactive visualizations to help understand common data structures",
+      url: "https://visualgo.net/en"
+    },
+    {
+      title: "DSA Problem Solving Challenge",
+      type: "challenge",
+      description: "Weekly coding challenges to improve your algorithm skills",
+      url: "https://leetcode.com/problemset/all/"
+    }
+  ],
+  c: [
+    {
+      title: "C Programming for Beginners",
+      type: "video",
+      description: "Step-by-step guide to C programming fundamentals",
+      url: "https://www.youtube.com/watch?v=KJgsSFOSQv0"
+    },
+    {
+      title: "Advanced C Programming Concepts",
+      type: "course",
+      description: "Deep dive into memory management, pointers, and advanced C features",
+      url: "https://www.edx.org/learn/c-programming"
+    },
+    {
+      title: "Build Your Own Shell in C",
+      type: "project",
+      description: "Practical project to understand system programming with C",
+      url: "https://github.com/codecrafters-io/build-your-own-x"
+    }
+  ],
+  cpp: [
+    {
+      title: "C++ Crash Course",
+      type: "course",
+      description: "Fast-paced introduction to C++ for programmers",
+      url: "https://www.coursera.org/learn/cpp-chengxu-sheji"
+    },
+    {
+      title: "Modern C++ Features",
+      type: "article",
+      description: "Overview of C++11/14/17/20 features with practical examples",
+      url: "https://www.modernescpp.com/"
+    },
+    {
+      title: "Game Development with C++",
+      type: "project",
+      description: "Create a simple 2D game using C++ and SDL",
+      url: "https://lazyfoo.net/tutorials/SDL/"
+    }
+  ],
+  os: [
+    {
+      title: "Operating Systems: Three Easy Pieces",
+      type: "article",
+      description: "Comprehensive guide to OS concepts with practical examples",
+      url: "https://pages.cs.wisc.edu/~remzi/OSTEP/"
+    },
+    {
+      title: "Build a Simple OS",
+      type: "project",
+      description: "Step-by-step guide to building your own operating system",
+      url: "https://wiki.osdev.org/Main_Page"
+    },
+    {
+      title: "Advanced OS Concepts",
+      type: "course",
+      description: "Deep dive into process management, memory, and file systems",
+      url: "https://www.coursera.org/learn/os-pku"
+    }
+  ],
+  cyber: [
+    {
+      title: "Web Security Academy",
+      type: "course",
+      description: "Hands-on labs for web security vulnerabilities and exploits",
+      url: "https://portswigger.net/web-security"
+    },
+    {
+      title: "Practical Cryptography",
+      type: "article",
+      description: "Understanding modern cryptographic algorithms and protocols",
+      url: "https://cryptopals.com/"
+    },
+    {
+      title: "Ethical Hacking Challenge",
+      type: "challenge",
+      description: "Practice your cybersecurity skills with CTF challenges",
+      url: "https://www.hackthebox.com/"
+    }
+  ],
+  ai: [
+    {
+      title: "Machine Learning Crash Course",
+      type: "course",
+      description: "Google's fast-paced introduction to machine learning",
+      url: "https://developers.google.com/machine-learning/crash-course"
+    },
+    {
+      title: "Deep Learning Specialization",
+      type: "video",
+      description: "Comprehensive series on neural networks and deep learning",
+      url: "https://www.coursera.org/specializations/deep-learning"
+    },
+    {
+      title: "Build an AI-powered Recommendation System",
+      type: "project",
+      description: "Practical project to implement machine learning algorithms",
+      url: "https://www.tensorflow.org/recommenders"
+    }
+  ],
+  python: [
+    {
+      title: "Python for Everybody",
+      type: "course",
+      description: "Beginner-friendly introduction to Python programming",
+      url: "https://www.py4e.com/"
+    },
+    {
+      title: "Advanced Python Concepts",
+      type: "article",
+      description: "Deep dive into decorators, generators, and context managers",
+      url: "https://realpython.com/"
+    },
+    {
+      title: "Web Scraping with Python",
+      type: "project",
+      description: "Build a web scraper to collect and analyze data",
+      url: "https://www.scrapingbee.com/blog/web-scraping-101-with-python/"
+    }
+  ]
+};
 
 export default function Quiz() {
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
@@ -41,7 +183,6 @@ export default function Quiz() {
   const currentQuestion = questions[state.currentQuestionIndex];
   const selectedAnswer = state.answers[state.currentQuestionIndex];
 
-  // Function to load a question using the AI
   const loadQuestion = async (topic: string) => {
     try {
       const question = await generateQuizQuestion(topic);
@@ -52,7 +193,6 @@ export default function Quiz() {
     }
   };
 
-  // Function to start the quiz by generating questions
   const startQuiz = async () => {
     if (!selectedTopic) {
       toast.error("Please select a topic first");
@@ -60,11 +200,10 @@ export default function Quiz() {
     }
 
     setIsGeneratingQuestions(true);
-    const numQuestions = 5; // Start with 5 questions per quiz
+    const numQuestions = 5;
     const newQuestions: QuizQuestion[] = [];
     
     try {
-      // Generate questions in sequence
       for (let i = 0; i < numQuestions; i++) {
         const question = await loadQuestion(topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic);
         newQuestions.push({
@@ -94,7 +233,7 @@ export default function Quiz() {
   };
 
   const handleSelectOption = (optionIndex: number) => {
-    if (state.showFeedback) return; // Don't allow changing answer after seeing feedback
+    if (state.showFeedback) return;
     
     const newAnswers = [...state.answers];
     newAnswers[state.currentQuestionIndex] = optionIndex;
@@ -105,7 +244,6 @@ export default function Quiz() {
       showFeedback: optionIndex !== null
     });
     
-    // Update streak count
     if (optionIndex === currentQuestion.correctAnswer) {
       setState(prev => ({
         ...prev,
@@ -134,9 +272,8 @@ export default function Quiz() {
   };
 
   const finishQuiz = () => {
-    // Calculate score and other statistics
     const endTime = Date.now();
-    const timeSpent = Math.floor((endTime - state.startTime) / 1000); // in seconds
+    const timeSpent = Math.floor((endTime - state.startTime) / 1000);
     
     let correct = 0;
     const categories: Record<string, { correct: number; total: number }> = {};
@@ -145,7 +282,6 @@ export default function Quiz() {
       const isCorrect = state.answers[index] === q.correctAnswer;
       if (isCorrect) correct++;
       
-      // Track category stats
       if (!categories[q.category]) {
         categories[q.category] = { correct: 0, total: 0 };
       }
@@ -190,7 +326,10 @@ export default function Quiz() {
     });
   };
 
-  // Show the quiz setup screen if not started
+  const getResourceSuggestions = (): ResourceSuggestion[] => {
+    return resourcesByTopic[selectedTopic] || resourcesByTopic.dsa;
+  };
+
   if (!quizStarted) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -264,7 +403,6 @@ export default function Quiz() {
     );
   }
 
-  // Show the results screen if the quiz is complete
   if (state.result) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -273,13 +411,13 @@ export default function Quiz() {
           <QuizResults 
             result={state.result} 
             onRestart={restartQuiz} 
+            resources={getResourceSuggestions()}
           />
         </div>
       </div>
     );
   }
 
-  // Show the question screen
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       <Navigation />
