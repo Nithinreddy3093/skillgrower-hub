@@ -58,7 +58,8 @@ export const useAIAssistantState = () => {
   const clearConversation = () => {
     setMessageState(prev => ({
       ...prev,
-      messages: [getWelcomeMessage()],
+      prompt: "",
+      messages: [],
       retryCount: 0
     }));
   };

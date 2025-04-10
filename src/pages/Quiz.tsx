@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { QuestionCard } from "@/components/quiz/QuizQuestion";
@@ -6,9 +7,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuizQuestion, QuizState, QuestionDifficulty, ResourceSuggestion } from "@/components/quiz/types";
-import { Loader2, BrainCircuit } from "lucide-react";
+import { Loader2, BrainCircuit, Trophy, Clock, ChevronRight } from "lucide-react";
 import { generateQuizQuestion } from "@/hooks/ai-assistant/api";
 import { toast } from "sonner";
+import { Progress } from "@/components/ui/progress";
 
 const topicOptions = [
   { id: "dsa", name: "Data Structures & Algorithms" },
@@ -179,6 +181,7 @@ export default function Quiz() {
   const [isLoading, setIsLoading] = useState(false);
   const [quizStarted, setQuizStarted] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
 
   const currentQuestion = questions[state.currentQuestionIndex];
   const selectedAnswer = state.answers[state.currentQuestionIndex];
@@ -200,6 +203,7 @@ export default function Quiz() {
     }
 
     setIsGeneratingQuestions(true);
+    setGenerationProgress(0);
     const numQuestions = 5;
     const newQuestions: QuizQuestion[] = [];
     
@@ -210,10 +214,13 @@ export default function Quiz() {
           ...question,
           id: crypto.randomUUID()
         });
+        
+        // Update progress after each question generation
+        const newProgress = Math.round(((i + 1) / numQuestions) * 100);
+        setGenerationProgress(newProgress);
         toast.success(`Generated question ${i+1} of ${numQuestions}`);
       }
       
-      setQuestions(newQuestions);
       setState({
         currentQuestionIndex: 0,
         answers: new Array(newQuestions.length).fill(null),
@@ -224,11 +231,13 @@ export default function Quiz() {
         showFeedback: false,
         result: null
       });
+      setQuestions(newQuestions);
       setQuizStarted(true);
     } catch (error) {
       toast.error("Failed to generate quiz questions. Please try again.");
     } finally {
       setIsGeneratingQuestions(false);
+      setGenerationProgress(0);
     }
   };
 
@@ -241,9 +250,10 @@ export default function Quiz() {
     setState({
       ...state,
       answers: newAnswers,
-      showFeedback: optionIndex !== null
+      showFeedback: true
     });
     
+    // Update streak counter
     if (optionIndex === currentQuestion.correctAnswer) {
       setState(prev => ({
         ...prev,
@@ -335,9 +345,9 @@ export default function Quiz() {
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
         <Navigation />
         <div className="max-w-7xl mx-auto pt-24 px-4">
-          <Card className="w-full max-w-3xl mx-auto">
+          <Card className="w-full max-w-3xl mx-auto border border-gray-200 dark:border-gray-700 shadow-lg">
             <CardHeader className="text-center">
-              <div className="mx-auto p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+              <div className="mx-auto p-3 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/30 dark:to-purple-900/30 rounded-full w-16 h-16 flex items-center justify-center mb-4">
                 <BrainCircuit className="h-8 w-8 text-indigo-600 dark:text-indigo-300" />
               </div>
               <CardTitle className="text-2xl md:text-3xl">AI-Generated Quiz</CardTitle>
@@ -349,7 +359,7 @@ export default function Quiz() {
               <div>
                 <label className="text-sm font-medium mb-2 block">Select Topic</label>
                 <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-                  <SelectTrigger>
+                  <SelectTrigger className="w-full">
                     <SelectValue placeholder="Choose a topic" />
                   </SelectTrigger>
                   <SelectContent>
@@ -389,11 +399,33 @@ export default function Quiz() {
                       Generating Questions...
                     </>
                   ) : (
-                    "Start Quiz"
+                    <>
+                      <Trophy className="mr-2 h-5 w-5" />
+                      Start Quiz
+                    </>
                   )}
                 </Button>
+                
+                {isGeneratingQuestions && (
+                  <div className="mt-4">
+                    <Progress value={generationProgress} className="h-2" />
+                    <p className="text-xs text-center mt-1 text-gray-500">
+                      {generationProgress}% - Generating question {Math.ceil(generationProgress / 20)} of 5
+                    </p>
+                  </div>
+                )}
+                
                 <p className="text-xs text-center mt-3 text-gray-500 dark:text-gray-400">
                   Our AI will generate 5 questions based on your selected topic
+                </p>
+              </div>
+              
+              <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
+                <h3 className="font-medium text-sm mb-2 text-indigo-700 dark:text-indigo-300">
+                  Topic Information: {topicOptions.find(t => t.id === selectedTopic)?.name}
+                </h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  You'll receive university-level questions on this topic. Questions will be tailored to your selected difficulty level.
                 </p>
               </div>
             </CardContent>
@@ -422,6 +454,21 @@ export default function Quiz() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
       <Navigation />
       <div className="max-w-7xl mx-auto pt-24 px-4">
+        {/* Quiz progress indicator */}
+        <div className="w-full max-w-3xl mx-auto mb-4">
+          <div className="flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <div className="flex items-center gap-2">
+              <Trophy className="h-4 w-4" />
+              <span>Score: {state.answers.filter((a, i) => a === questions[i]?.correctAnswer).length} / {state.currentQuestionIndex}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>Questions: {state.currentQuestionIndex + 1} of {questions.length}</span>
+            </div>
+          </div>
+          <Progress value={((state.currentQuestionIndex + 1) / questions.length) * 100} className="h-2" />
+        </div>
+
         {isLoading ? (
           <div className="w-full h-64 flex items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
@@ -437,6 +484,18 @@ export default function Quiz() {
             totalQuestions={questions.length}
           />
         )}
+        
+        <div className="w-full max-w-3xl mx-auto mt-4 text-right">
+          {state.showFeedback && (
+            <Button 
+              onClick={handleNextQuestion}
+              className="group"
+            >
+              {state.currentQuestionIndex === questions.length - 1 ? "Finish Quiz" : "Next Question"}
+              <ChevronRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

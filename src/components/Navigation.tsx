@@ -61,7 +61,7 @@ export const Navigation = () => {
             </Link>
             <Link 
               to="/ai-assistant" 
-              className="flex items-center space-x-1 hover:text-indigo-100 transition bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded ml-1"
+              className="flex items-center space-x-1 hover:text-indigo-100 transition bg-indigo-800 hover:bg-indigo-900 px-2 py-1 rounded ml-1"
             >
               <Bot size={20} />
               <span className="hidden sm:inline">AI Help</span>
