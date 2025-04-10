@@ -34,7 +34,7 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
     }
   }, [isUser, isStreaming, message.content]);
 
-  // Format text with special handling for links, bullet points, and lists
+  // Format text with special handling for links, bullet points, lists, and emojis
   const formatContent = (text: string) => {
     // Check if this is an error message
     const isErrorMessage = text.includes("I'm having trouble") || 
@@ -94,6 +94,16 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
         // Apply error styling for error messages
         if (isErrorMessage) {
           return <div key={j} className="dark:text-amber-300 text-amber-600 font-medium">{line || <br />}</div>;
+        }
+
+        // Highlight emojis for better visibility
+        const lineWithEnhancedEmojis = line.replace(/(\p{Emoji}+)/gu, 
+          '<span class="text-lg">$1</span>');
+        
+        if (lineWithEnhancedEmojis !== line) {
+          return <div key={j} className="dark:text-gray-150" dangerouslySetInnerHTML={{
+            __html: lineWithEnhancedEmojis
+          }} />;
         }
         
         return <div key={j} className="dark:text-gray-150">{line || <br />}</div>;

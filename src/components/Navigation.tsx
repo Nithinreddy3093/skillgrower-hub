@@ -52,7 +52,10 @@ export const Navigation = () => {
               <Users size={20} />
               <span className="hidden sm:inline">Collaborate</span>
             </Link>
-            <Link to="/quiz" className="flex items-center space-x-1 hover:text-indigo-100 transition">
+            <Link 
+              to="/quiz" 
+              className="flex items-center space-x-1 hover:text-indigo-100 transition bg-green-600 hover:bg-green-700 px-2 py-1 rounded"
+            >
               <BrainCircuit size={20} />
               <span className="hidden sm:inline">Quiz</span>
             </Link>

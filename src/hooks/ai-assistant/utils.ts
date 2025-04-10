@@ -10,7 +10,7 @@ export const autoResizeTextarea = (element: HTMLTextAreaElement | null) => {
 
 export const getWelcomeMessage = (): ChatMessage => ({
   id: crypto.randomUUID(),
-  content: "Hi there! I'm your SkillTrack AI assistant powered by Google Gemini. Ask me anything about learning, skill development, or how to reach your goals faster.",
+  content: "Hey there, Champion! 🚀 I'm your SkillGrower AI assistant powered by Google Gemini. Ready to conquer new skills today? Let's grow together! Ask me anything about learning, skill development, or how to reach your goals faster.",
   role: "assistant",
   timestamp: new Date(),
 });
@@ -30,6 +30,7 @@ export const getSavedMessages = (userId: string): ChatMessage[] => {
 
 export const saveMessages = (userId: string, messages: ChatMessage[]) => {
   if (!userId || !messages.length) return;
-  const messagesToSave = messages.slice(-20);
+  // Save more messages for better context
+  const messagesToSave = messages.slice(-30);
   localStorage.setItem(`skilltrack-chat-${userId}`, JSON.stringify(messagesToSave));
 };

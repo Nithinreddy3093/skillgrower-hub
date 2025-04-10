@@ -45,6 +45,34 @@ export const quizQuestions: QuizQuestion[] = [
     difficulty: "easy",
     explanation: "Data preprocessing transforms and cleans raw data into a format that AI models can effectively use for training or inference."
   },
+  {
+    id: "e4",
+    question: "In computer science, what does the acronym 'OOP' stand for?",
+    options: [
+      "Order of Operations Processing",
+      "Object-Oriented Programming",
+      "Online Operating Protocol",
+      "Optimal Output Procedure"
+    ],
+    correctAnswer: 1,
+    category: "Computer Science",
+    difficulty: "easy",
+    explanation: "Object-Oriented Programming (OOP) is a programming paradigm based on the concept of 'objects', which can contain data and code that manipulates that data."
+  },
+  {
+    id: "e5",
+    question: "Which cybersecurity practice involves using multiple authentication methods to access a system?",
+    options: [
+      "Encryption",
+      "Firewall configuration",
+      "Multi-factor authentication (MFA)",
+      "Intrusion detection"
+    ],
+    correctAnswer: 2,
+    category: "Cybersecurity",
+    difficulty: "easy",
+    explanation: "Multi-factor authentication (MFA) requires users to provide two or more verification factors to gain access, significantly enhancing security beyond just passwords."
+  },
   
   // Intermediate questions
   {
@@ -88,6 +116,48 @@ export const quizQuestions: QuizQuestion[] = [
     category: "Ethics in AI",
     difficulty: "intermediate",
     explanation: "Obtaining informed consent and transparently communicating how user data will be used by AI systems is a fundamental ethical requirement when handling personal data."
+  },
+  {
+    id: "i4",
+    question: "In cloud computing, what does 'IaaS' stand for?",
+    options: [
+      "Internet as a Service",
+      "Infrastructure as a Service",
+      "Integration as a Service",
+      "Intelligence as a Service"
+    ],
+    correctAnswer: 1,
+    category: "Cloud Computing",
+    difficulty: "intermediate",
+    explanation: "Infrastructure as a Service (IaaS) is a cloud computing offering that provides virtualized computing resources over the internet, allowing organizations to rent servers, storage, networks, and operating systems on a pay-as-you-go basis."
+  },
+  {
+    id: "i5",
+    question: "What is the purpose of normalization in database design?",
+    options: [
+      "To encrypt sensitive data",
+      "To minimize data redundancy and dependency",
+      "To speed up query processing",
+      "To reduce the number of tables"
+    ],
+    correctAnswer: 1,
+    category: "Data Science",
+    difficulty: "intermediate",
+    explanation: "Normalization in database design is the process of organizing data to minimize redundancy and dependency by dividing larger tables into smaller ones and defining relationships between them."
+  },
+  {
+    id: "i6",
+    question: "Which software development methodology emphasizes adaptive planning and evolutionary development?",
+    options: [
+      "Waterfall",
+      "Agile",
+      "V-Model",
+      "Big Bang"
+    ],
+    correctAnswer: 1,
+    category: "Engineering",
+    difficulty: "intermediate",
+    explanation: "Agile methodology emphasizes adaptive planning, evolutionary development, early delivery, and continual improvement, encouraging rapid and flexible response to change."
   },
   
   // Advanced questions
@@ -146,6 +216,62 @@ export const quizQuestions: QuizQuestion[] = [
     category: "Data Preprocessing",
     difficulty: "advanced",
     explanation: "Resampling techniques like oversampling minority classes or undersampling majority classes help address the imbalance issue directly, improving model training on skewed datasets."
+  },
+  {
+    id: "a5",
+    question: "In web development, which of the following is a key advantage of server-side rendering (SSR) over client-side rendering?",
+    options: [
+      "Reduced server load",
+      "Better SEO performance",
+      "Simpler codebase maintenance",
+      "Faster updates to the UI"
+    ],
+    correctAnswer: 1,
+    category: "Web Development",
+    difficulty: "advanced",
+    explanation: "Server-side rendering (SSR) provides better SEO performance because search engine crawlers can directly access the fully rendered content, unlike client-side rendering where JavaScript must execute first."
+  },
+  {
+    id: "a6",
+    question: "Which cryptographic attack attempts to find collisions in hash functions?",
+    options: [
+      "Rainbow table attack",
+      "Man-in-the-middle attack",
+      "Birthday attack",
+      "Dictionary attack"
+    ],
+    correctAnswer: 2,
+    category: "Cybersecurity",
+    difficulty: "advanced",
+    explanation: "The birthday attack is a cryptographic technique that exploits the mathematics behind the birthday paradox to find collisions in hash functions with significantly fewer attempts than a brute force approach."
+  },
+  {
+    id: "a7",
+    question: "In distributed systems, what does the CAP theorem state?",
+    options: [
+      "A system cannot simultaneously provide Consistency, Availability, and Partition tolerance",
+      "A system must choose between Cost, Accessibility, and Performance",
+      "A system requires Caching, Authentication, and Proxy servers",
+      "A system should prioritize Connectivity, Automation, and Persistence"
+    ],
+    correctAnswer: 0,
+    category: "Computer Science",
+    difficulty: "advanced",
+    explanation: "The CAP theorem states that a distributed data store cannot simultaneously provide more than two out of these three guarantees: Consistency, Availability, and Partition tolerance."
+  },
+  {
+    id: "a8",
+    question: "Which neural network architecture is best suited for sequential data processing like natural language?",
+    options: [
+      "Convolutional Neural Networks (CNN)",
+      "Recurrent Neural Networks (RNN)",
+      "Generative Adversarial Networks (GAN)",
+      "Multilayer Perceptrons (MLP)"
+    ],
+    correctAnswer: 1,
+    category: "AI Integration Basics",
+    difficulty: "advanced",
+    explanation: "Recurrent Neural Networks (RNNs) are designed to recognize patterns in sequences of data, making them ideal for tasks involving sequential information like text, speech, or time series data."
   }
 ];
 
@@ -175,6 +301,12 @@ export const getResourceSuggestions = (score: number, totalQuestions: number) =>
         type: "article" as const,
         description: "A comprehensive guide to the core concepts of integrating AI into applications.",
         url: "https://example.com/articles/ai-integration-guide"
+      },
+      {
+        title: "Computer Science for Beginners",
+        type: "course" as const,
+        description: "Learn the fundamentals of computer science with practical exercises.",
+        url: "https://example.com/courses/cs-fundamentals"
       }
     ];
   } else if (percentage < 80) {
@@ -196,6 +328,12 @@ export const getResourceSuggestions = (score: number, totalQuestions: number) =>
         type: "article" as const,
         description: "Analyze how companies have successfully integrated AI into their products.",
         url: "https://example.com/articles/ai-case-studies"
+      },
+      {
+        title: "Cloud Computing Architecture",
+        type: "course" as const,
+        description: "Design scalable systems using modern cloud architecture patterns.",
+        url: "https://example.com/courses/cloud-architecture"
       }
     ];
   } else {
@@ -217,6 +355,18 @@ export const getResourceSuggestions = (score: number, totalQuestions: number) =>
         type: "challenge" as const,
         description: "Apply your skills by contributing to real open source AI integration projects.",
         url: "https://example.com/challenges/opensource-ai"
+      },
+      {
+        title: "Research Papers in Applied AI",
+        type: "article" as const,
+        description: "Read and understand cutting-edge research in applied artificial intelligence.",
+        url: "https://example.com/articles/ai-research-papers"
+      },
+      {
+        title: "Advanced Cybersecurity Techniques",
+        type: "course" as const,
+        description: "Master the latest techniques in securing AI systems and applications.",
+        url: "https://example.com/courses/advanced-cybersecurity"
       }
     ];
   }

@@ -6,7 +6,13 @@ export type QuestionCategory =
   | "APIs & SDKs" 
   | "AI in Frontend/Backend" 
   | "Data Preprocessing" 
-  | "Ethics in AI";
+  | "Ethics in AI"
+  | "Computer Science"
+  | "Cybersecurity"
+  | "Web Development"
+  | "Data Science"
+  | "Cloud Computing"
+  | "Engineering";
 
 export interface QuizQuestion {
   id: string;
