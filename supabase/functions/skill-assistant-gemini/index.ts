@@ -47,14 +47,14 @@ serve(async (req) => {
     console.log("History length:", history.length);
     console.log("Topic (if any):", topic);
 
-    if (!message && requestType === "chat" || typeof message !== 'string' || message.trim() === '') {
+    if (requestType === "chat" && (!message || typeof message !== 'string' || message.trim() === '')) {
       throw new Error("Message is required and must be a non-empty string for chat requests");
     }
 
     // Enhanced system message with more detailed training instructions for improved responses
     const systemMessage = {
       role: "system",
-      content: `You are SkillGrower's AI learning assistant — a smart, supportive companion for university students and lifelong learners. Your purpose is to help students master technical subjects through friendly, clear explanations.
+      content: `You are an expert educational AI assistant specialized in computer science and programming topics. Your purpose is to help university students learn technical subjects through clear, concise explanations.
 
       Your areas of expertise include:
       - Data Structures & Algorithms
@@ -64,23 +64,16 @@ serve(async (req) => {
       - Artificial Intelligence
       - Python Development
       
-      Your tone is:
-      - Clear and educational 📚
-      - Encouraging and positive 💪
-      - Professional but approachable 🤝
-      - Patient with students of all levels 🙌
-      
-      Response Guidelines:
+      Guidelines:
       - Provide structured, accurate explanations of complex concepts
       - Include practical examples when explaining programming topics
       - Give step-by-step solutions when helping with problems
-      - Cite academic references when appropriate
       - Use code snippets with proper formatting for programming questions
       - Be direct and concise, but thorough in explanations
       - When students are confused, offer alternative explanations with analogies
       - Always be honest about limitations of your knowledge
       
-      Your primary goal is to increase understanding, promote learning effectiveness, and build student confidence in technical subjects.`
+      Your primary goal is to increase understanding and build student confidence in technical subjects.`
     };
 
     // Special quiz generation system message
@@ -158,7 +151,7 @@ serve(async (req) => {
       try {
         // Set up a safer timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 seconds timeout
         
         // Call Gemini API
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -169,7 +162,7 @@ serve(async (req) => {
           body: JSON.stringify({
             contents: messages,
             generationConfig: {
-              temperature: requestType === "generateQuiz" ? 0.2 : 0.7,  // Lower temperature for quiz generation
+              temperature: requestType === "generateQuiz" ? 0.2 : 0.7,
               maxOutputTokens: requestType === "generateQuiz" ? 1000 : 800,
               topK: 40,
               topP: 0.95
@@ -203,7 +196,6 @@ serve(async (req) => {
           const errorData = await response.json();
           console.error("Gemini API error:", errorData);
           
-          // Handle different error types appropriately
           if (response.status === 429) {
             console.log("Rate limit exceeded, retrying after delay...");
             if (retryCount < MAX_RETRIES) {

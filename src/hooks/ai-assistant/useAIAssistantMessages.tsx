@@ -72,14 +72,21 @@ export const useAIAssistantMessages = () => {
       ]);
       setIsStreaming(true);
 
+      // Add console.log for debugging
+      console.log("Sending message:", trimmedPrompt);
+      console.log("User ID:", user?.id);
+      console.log("Message history length:", messageState.messages.length);
+
       const response = await sendMessageToAssistant(trimmedPrompt, user?.id, messageState.messages);
+      
+      console.log("Received response:", response ? "Response received" : "No response");
       
       // Validate response content
       if (!response || response.trim() === "") {
         throw new Error("Empty response received from assistant");
       }
       
-      setMessages(messageState.messages.map(msg => 
+      setMessages(prev => prev.map(msg => 
         msg.id === placeholderId 
           ? { ...msg, content: response } 
           : msg

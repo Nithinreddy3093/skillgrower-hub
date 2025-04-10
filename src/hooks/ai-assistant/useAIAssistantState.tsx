@@ -9,6 +9,7 @@ export interface AIAssistantMessageState {
   isLoading: boolean;
   isStreaming: boolean;
   retryCount: number;
+  selectedTopic?: string;
 }
 
 export const useAIAssistantState = () => {
@@ -17,7 +18,8 @@ export const useAIAssistantState = () => {
     messages: [],
     isLoading: false,
     isStreaming: false,
-    retryCount: 0
+    retryCount: 0,
+    selectedTopic: undefined
   });
   
   const setPrompt = (value: string) => {
@@ -55,6 +57,13 @@ export const useAIAssistantState = () => {
     }));
   };
   
+  const setSelectedTopic = (selectedTopic?: string) => {
+    setMessageState(prev => ({
+      ...prev,
+      selectedTopic
+    }));
+  };
+  
   const clearConversation = () => {
     setMessageState(prev => ({
       ...prev,
@@ -71,6 +80,7 @@ export const useAIAssistantState = () => {
     setIsLoading,
     setIsStreaming,
     setRetryCount,
+    setSelectedTopic,
     clearConversation
   };
 };

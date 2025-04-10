@@ -20,7 +20,7 @@ export const sendMessageToAssistant = async (
     try {
       // Provide better context by sending more message history
       const messageHistory = history
-        .slice(-5)
+        .slice(-8) // Increase context window to improve responses
         .map(m => ({ 
           role: m.role, 
           content: m.content 
@@ -28,7 +28,7 @@ export const sendMessageToAssistant = async (
 
       // Use a Promise.race with a timeout promise instead of AbortController
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 20000);
+        setTimeout(() => reject(new Error("Request timed out")), 30000); // Increased timeout to 30s
       });
 
       const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
@@ -42,17 +42,19 @@ export const sendMessageToAssistant = async (
       });
       
       // Race between the timeout and the actual request
-      const { data, error } = await Promise.race([
+      const response = await Promise.race([
         responsePromise,
         timeoutPromise.then(() => {
           throw new Error("Request timed out");
         })
       ]) as any;
+      
+      const { data, error } = response;
 
       if (error) {
         console.error("Error from skill-assistant-gemini function:", error);
         
-        // Handle quota exceeded errors
+        // Better error handling with more specific messages
         if (error.message?.includes("quota") || 
             error.message?.includes("insufficient") ||
             error.response?.status === 429) {
@@ -71,17 +73,7 @@ export const sendMessageToAssistant = async (
           }
         }
         
-        // Enhance error messages for better user feedback
-        let errorMessage = error.message;
-        if (error.message?.includes("API key")) {
-          errorMessage = "AI service API key issue. Please contact support.";
-        } else if (error.message?.includes("rate limit")) {
-          errorMessage = "AI service rate limit reached. Please try again later.";
-        } else if (error.message?.includes("model")) {
-          errorMessage = "AI model issue. Please try a different query.";
-        }
-        
-        throw new Error(errorMessage || "Error communicating with assistant");
+        throw new Error(error.message || "Error communicating with assistant");
       }
 
       if (!data || !data.response) {
@@ -91,6 +83,7 @@ export const sendMessageToAssistant = async (
       return data.response;
     } catch (error: any) {
       lastError = error;
+      console.error("Error in sendMessageToAssistant:", error);
       
       // Special handling for quota errors
       if (error.message?.includes("quota") || error.message?.includes("insufficient")) {
@@ -101,12 +94,13 @@ export const sendMessageToAssistant = async (
       // Only retry specific errors
       if (error.message?.includes("timeout") || error.message?.includes("network")) {
         if (retryCount < MAX_RETRIES) {
+          console.log(`Retry attempt ${retryCount + 1}...`);
           retryCount++;
+          await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retryCount));
           continue;
         }
       }
       
-      console.error("Error in sendMessageToAssistant:", error);
       throw error;
     }
   }
@@ -118,13 +112,27 @@ export const generateQuizQuestion = async (topic: string) => {
   console.log("Generating quiz question for topic:", topic);
   
   try {
-    const { data, error } = await supabase.functions.invoke("skill-assistant-gemini", {
+    // Improved error handling with a timeout
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error("Request timed out")), 30000);
+    });
+
+    const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
       method: "POST",
       body: { 
         requestType: "generateQuiz",
         topic
       }
     });
+
+    const response = await Promise.race([
+      responsePromise,
+      timeoutPromise.then(() => {
+        throw new Error("Request timed out");
+      })
+    ]) as any;
+    
+    const { data, error } = response;
 
     if (error) {
       console.error("Error generating quiz question:", error);
@@ -136,9 +144,9 @@ export const generateQuizQuestion = async (topic: string) => {
     }
 
     return data.question;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in generateQuizQuestion:", error);
-    toast.error("Failed to generate quiz question. Please try again.");
+    toast.error(error.message || "Failed to generate quiz question. Please try again.");
     throw error;
   }
 };

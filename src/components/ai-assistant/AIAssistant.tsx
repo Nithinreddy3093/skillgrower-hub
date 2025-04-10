@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
-import { Bot, X, Minimize2, Maximize2, Send, Trash2 } from "lucide-react";
+import { Bot, X, Minimize2, Maximize2, Send, Trash2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAIAssistant } from "@/hooks/useAIAssistant";
-import { ChatMessage as ChatMessageType } from "@/hooks/ai-assistant/types";
 import { ChatMessage } from "./ChatMessage";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -28,6 +27,15 @@ export const AIAssistant = () => {
     handleTextareaChange,
   } = useAIAssistant();
 
+  const [connectionError, setConnectionError] = useState(false);
+  
+  // Clear connection error when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      setConnectionError(false);
+    }
+  }, [messages]);
+
   // Return null on server-side to avoid hydration mismatch
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -45,13 +53,13 @@ export const AIAssistant = () => {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             whileHover={{ scale: 1.05 }}
-            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center shadow-lg hover:bg-green-700 transition-colors z-50"
+            className="fixed bottom-6 right-6 w-14 h-14 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-colors z-50"
             onClick={toggleChat}
             aria-label="Open AI Assistant"
           >
             <div className="relative">
               <Bot size={24} />
-              <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse" />
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-indigo-400 rounded-full animate-pulse" />
             </div>
           </motion.button>
         )}
@@ -73,10 +81,10 @@ export const AIAssistant = () => {
             )}
           >
             {/* Header */}
-            <div className="p-3 bg-green-600 dark:bg-green-800 text-white flex items-center justify-between">
+            <div className="p-3 bg-indigo-600 dark:bg-indigo-800 text-white flex items-center justify-between">
               <div className="flex items-center space-x-2">
                 <Bot size={18} />
-                <h3 className="font-medium text-sm">Gemini AI Assistant</h3>
+                <h3 className="font-medium text-sm">AI Learning Assistant</h3>
               </div>
               <div className="flex items-center space-x-2">
                 {isMinimized ? (
@@ -123,9 +131,26 @@ export const AIAssistant = () => {
                   {messages.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-gray-500 dark:text-gray-400 text-center p-4">
                       <div>
-                        <Bot size={36} className="mx-auto mb-2 text-green-500 opacity-80" />
-                        <p>Ask me anything about learning, skill development, or how to reach your goals faster.</p>
-                        <p className="text-xs mt-2 text-gray-400">Powered by Google Gemini AI</p>
+                        <Bot size={36} className="mx-auto mb-2 text-indigo-500 opacity-80" />
+                        <p>Ask me anything about programming, algorithms, operating systems, or how to solve technical problems.</p>
+                        <div className="flex justify-center mt-4">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => setPrompt("How do I implement binary search in C?")}
+                            className="text-xs mr-2"
+                          >
+                            Binary search in C?
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setPrompt("Explain virtual memory in operating systems")}
+                            className="text-xs"
+                          >
+                            Virtual memory?
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -138,11 +163,36 @@ export const AIAssistant = () => {
                     ))
                   )}
                   <div ref={messagesEndRef} />
+                  
+                  {/* Connection error message */}
+                  {connectionError && (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3 mt-2">
+                      <div className="flex items-start">
+                        <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400 mr-2 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm text-red-800 dark:text-red-300">
+                            Connection issue: Unable to reach the AI service.
+                          </p>
+                          <Button 
+                            variant="link" 
+                            className="text-xs text-red-600 dark:text-red-400 p-0 h-auto mt-1"
+                            onClick={() => setConnectionError(false)}
+                          >
+                            Try again
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Input area */}
                 <form 
-                  onSubmit={sendMessage} 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (!prompt.trim()) return;
+                    sendMessage();
+                  }} 
                   className="p-3 border-t dark:border-gray-700 flex items-end gap-2"
                 >
                   <textarea
@@ -152,10 +202,11 @@ export const AIAssistant = () => {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
+                        if (!prompt.trim()) return;
                         sendMessage();
                       }
                     }}
-                    placeholder="Ask for quick learning tips..."
+                    placeholder="Ask about programming, algorithms, etc..."
                     className="flex-1 border dark:border-gray-700 rounded-md p-2 resize-none outline-none text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 min-h-[42px] max-h-32"
                     disabled={isLoading}
                     rows={1}
@@ -166,7 +217,7 @@ export const AIAssistant = () => {
                       "flex-shrink-0 h-10 w-10 p-0",
                       isLoading 
                         ? "bg-gray-400 cursor-not-allowed" 
-                        : "bg-green-600 hover:bg-green-700"
+                        : "bg-indigo-600 hover:bg-indigo-700"
                     )}
                     disabled={isLoading || !prompt.trim()}
                     aria-label="Send message"
