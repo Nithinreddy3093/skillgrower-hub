@@ -1,308 +1,305 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { QuizQuestion, QuizState, QuizResult, QuestionCategory, QuestionDifficulty } from '../components/quiz/types';
-import { quizQuestions, getResourceSuggestions } from '../components/quiz/questions';
-import { QuestionCard } from '../components/quiz/QuizQuestion';
-import { QuizResults } from '../components/quiz/QuizResults';
+import { useEffect, useState } from "react";
+import { Navigation } from "@/components/Navigation";
+import { QuestionCard } from "@/components/quiz/QuizQuestion";
+import { QuizResults } from "@/components/quiz/QuizResults";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { BrainCircuitIcon, LoaderIcon } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { QuizQuestion, QuizState, QuestionDifficulty } from "@/components/quiz/types";
+import { Loader2, BrainCircuit } from "lucide-react";
+import { generateQuizQuestion } from "@/hooks/ai-assistant/api";
 import { toast } from "sonner";
 
+const topicOptions = [
+  { id: "dsa", name: "Data Structures & Algorithms" },
+  { id: "c", name: "C Programming" },
+  { id: "cpp", name: "C++ Programming" },
+  { id: "os", name: "Operating Systems" },
+  { id: "cyber", name: "Cybersecurity" },
+  { id: "ai", name: "Artificial Intelligence" },
+  { id: "python", name: "Python" }
+];
+
 export default function Quiz() {
-  const [quizState, setQuizState] = useState<QuizState>({
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [state, setState] = useState<QuizState>({
     currentQuestionIndex: 0,
     answers: [],
-    startTime: 0,
+    startTime: Date.now(),
     endTime: null,
-    difficulty: "easy",
+    difficulty: "intermediate",
     correctStreak: 0,
     showFeedback: false,
     result: null
   });
-  
-  const [loading, setLoading] = useState(false);
-  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [started, setStarted] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState("dsa");
+  const [isLoading, setIsLoading] = useState(false);
+  const [quizStarted, setQuizStarted] = useState(false);
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
 
-  // Initialize questions when component mounts
-  useEffect(() => {
-    // Select initial set of questions
-    const initialQuestions = shuffleArray(
-      quizQuestions.filter(q => q.difficulty === "easy")
-    ).slice(0, 5);
-    
-    setQuestions(initialQuestions);
-  }, []);
-  
-  // Function to adapt difficulty based on performance
-  const adaptDifficulty = useCallback(() => {
-    const { correctStreak, difficulty } = quizState;
-    
-    if (correctStreak >= 3 && difficulty === "easy") {
-      return "intermediate";
-    } else if (correctStreak >= 3 && difficulty === "intermediate") {
-      return "advanced";
-    } else if (correctStreak <= -2 && difficulty === "advanced") {
-      return "intermediate";
-    } else if (correctStreak <= -2 && difficulty === "intermediate") {
-      return "easy";
+  const currentQuestion = questions[state.currentQuestionIndex];
+  const selectedAnswer = state.answers[state.currentQuestionIndex];
+
+  // Function to load a question using the AI
+  const loadQuestion = async (topic: string) => {
+    try {
+      const question = await generateQuizQuestion(topic);
+      return question;
+    } catch (error) {
+      console.error("Error loading question:", error);
+      throw error;
     }
-    return difficulty;
-  }, [quizState.correctStreak, quizState.difficulty]);
-  
-  // Function to handle answer selection
-  const handleSelectOption = (optionIndex: number) => {
-    if (quizState.showFeedback) return;
-    
-    const currentQuestion = questions[quizState.currentQuestionIndex];
-    const isCorrect = optionIndex === currentQuestion.correctAnswer;
-    
-    // Update answers
-    const newAnswers = [...quizState.answers];
-    newAnswers[quizState.currentQuestionIndex] = optionIndex;
-    
-    // Update streak
-    const newStreak = isCorrect 
-      ? quizState.correctStreak + 1 
-      : quizState.correctStreak - 1;
-      
-    setQuizState(prev => ({
-      ...prev,
-      answers: newAnswers,
-      correctStreak: newStreak,
-      showFeedback: true
-    }));
   };
-  
-  // Function to move to the next question or finish quiz
-  const handleNextQuestion = () => {
-    const currentIndex = quizState.currentQuestionIndex;
-    
-    // If we're at the last question, finish quiz
-    if (currentIndex === questions.length - 1) {
-      finishQuiz();
+
+  // Function to start the quiz by generating questions
+  const startQuiz = async () => {
+    if (!selectedTopic) {
+      toast.error("Please select a topic first");
       return;
     }
+
+    setIsGeneratingQuestions(true);
+    const numQuestions = 5; // Start with 5 questions per quiz
+    const newQuestions: QuizQuestion[] = [];
     
-    // Adapt difficulty if needed
-    const newDifficulty = adaptDifficulty();
-    
-    // If difficulty has changed, add appropriate questions
-    if (newDifficulty !== quizState.difficulty) {
-      // Get questions of the new difficulty that aren't already in the quiz
-      const existingIds = new Set(questions.map(q => q.id));
-      const difficultyQuestions = quizQuestions
-        .filter(q => q.difficulty === newDifficulty && !existingIds.has(q.id));
-      
-      // If we have new questions of this difficulty, add some
-      if (difficultyQuestions.length > 0) {
-        const newQuestions = shuffleArray(difficultyQuestions).slice(0, 2);
-        setQuestions([...questions, ...newQuestions]);
+    try {
+      // Generate questions in sequence
+      for (let i = 0; i < numQuestions; i++) {
+        const question = await loadQuestion(topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic);
+        newQuestions.push({
+          ...question,
+          id: crypto.randomUUID()
+        });
+        toast.success(`Generated question ${i+1} of ${numQuestions}`);
       }
-    }
-    
-    // Move to next question
-    setQuizState(prev => ({
-      ...prev,
-      currentQuestionIndex: prev.currentQuestionIndex + 1,
-      difficulty: newDifficulty,
-      showFeedback: false
-    }));
-  };
-  
-  // Function to start the quiz
-  const startQuiz = () => {
-    setStarted(true);
-    setLoading(true);
-    
-    // Simulate loading for better UX
-    setTimeout(() => {
-      setQuizState({
-        ...quizState,
+      
+      setQuestions(newQuestions);
+      setState({
+        currentQuestionIndex: 0,
+        answers: new Array(newQuestions.length).fill(null),
         startTime: Date.now(),
-        answers: Array(questions.length).fill(null)
+        endTime: null,
+        difficulty: state.difficulty,
+        correctStreak: 0,
+        showFeedback: false,
+        result: null
       });
-      setLoading(false);
-    }, 1000);
+      setQuizStarted(true);
+    } catch (error) {
+      toast.error("Failed to generate quiz questions. Please try again.");
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
   };
-  
-  // Function to finish quiz and calculate results
+
+  const handleSelectOption = (optionIndex: number) => {
+    if (state.showFeedback) return; // Don't allow changing answer after seeing feedback
+    
+    const newAnswers = [...state.answers];
+    newAnswers[state.currentQuestionIndex] = optionIndex;
+    
+    setState({
+      ...state,
+      answers: newAnswers,
+      showFeedback: optionIndex !== null
+    });
+    
+    // Update streak count
+    if (optionIndex === currentQuestion.correctAnswer) {
+      setState(prev => ({
+        ...prev,
+        correctStreak: prev.correctStreak + 1
+      }));
+    } else {
+      setState(prev => ({
+        ...prev,
+        correctStreak: 0
+      }));
+    }
+  };
+
+  const handleNextQuestion = () => {
+    const isLastQuestion = state.currentQuestionIndex === questions.length - 1;
+    
+    if (isLastQuestion) {
+      finishQuiz();
+    } else {
+      setState({
+        ...state,
+        currentQuestionIndex: state.currentQuestionIndex + 1,
+        showFeedback: false
+      });
+    }
+  };
+
   const finishQuiz = () => {
+    // Calculate score and other statistics
     const endTime = Date.now();
-    const timeSpent = Math.round((endTime - quizState.startTime) / 1000);
-    const score = quizState.answers.reduce((count, answer, index) => {
-      return answer === questions[index].correctAnswer ? count + 1 : count;
-    }, 0);
+    const timeSpent = Math.floor((endTime - state.startTime) / 1000); // in seconds
     
-    // Calculate category stats
-    const categories = questions.reduce((acc, question, index) => {
-      const category = question.category;
-      const isCorrect = quizState.answers[index] === question.correctAnswer;
-      
-      if (!acc[category]) {
-        acc[category] = { correct: 0, total: 0 };
-      }
-      
-      acc[category].total += 1;
-      if (isCorrect) {
-        acc[category].correct += 1;
-      }
-      
-      return acc;
-    }, {} as Record<QuestionCategory, { correct: number, total: number }>);
+    let correct = 0;
+    const categories: Record<string, { correct: number; total: number }> = {};
     
-    // Create result object
-    const result: QuizResult = {
-      title: "AI Integration Concepts Quiz",
-      score,
+    questions.forEach((q, index) => {
+      const isCorrect = state.answers[index] === q.correctAnswer;
+      if (isCorrect) correct++;
+      
+      // Track category stats
+      if (!categories[q.category]) {
+        categories[q.category] = { correct: 0, total: 0 };
+      }
+      categories[q.category].total++;
+      if (isCorrect) categories[q.category].correct++;
+    });
+    
+    const result = {
+      title: `${topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic} Quiz`,
+      score: correct,
       totalQuestions: questions.length,
       date: new Date().toISOString(),
       timeSpent,
-      categories
+      categories: categories as Record<any, { correct: number; total: number }>
     };
     
-    // Update state with results
-    setQuizState(prev => ({
-      ...prev,
+    setState({
+      ...state,
       endTime,
       result
-    }));
-    
-    // Simulate saving to backend (would be an API call in a real app)
-    simulateSaveToBackend(result);
+    });
   };
-  
-  // Function to simulate saving results to backend
-  const simulateSaveToBackend = (result: QuizResult) => {
-    // In a real app, this would be an API call
-    setTimeout(() => {
-      console.log("Quiz results saved:", result);
-      toast.success("Quiz results saved to your profile!");
-    }, 1000);
-  };
-  
-  // Function to restart the quiz
+
   const restartQuiz = () => {
-    // Reset state and shuffle questions
-    const initialQuestions = shuffleArray(
-      quizQuestions.filter(q => q.difficulty === "easy")
-    ).slice(0, 5);
-    
-    setQuestions(initialQuestions);
-    setQuizState({
+    setQuizStarted(false);
+    setState({
       currentQuestionIndex: 0,
-      answers: Array(initialQuestions.length).fill(null),
+      answers: [],
       startTime: Date.now(),
       endTime: null,
-      difficulty: "easy",
+      difficulty: "intermediate",
       correctStreak: 0,
       showFeedback: false,
       result: null
     });
   };
-  
-  // Helper function to shuffle array
-  function shuffleArray<T>(array: T[]): T[] {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  }
-  
-  // Render different states of the quiz
-  if (!started) {
-    return <QuizIntro onStart={startQuiz} />;
-  }
-  
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh]">
-        <LoaderIcon className="animate-spin h-10 w-10 text-primary mb-4" />
-        <p className="text-xl">Loading quiz questions...</p>
-      </div>
-    );
-  }
-  
-  if (quizState.result) {
-    return (
-      <QuizResults 
-        result={quizState.result} 
-        resources={getResourceSuggestions(quizState.result.score, quizState.result.totalQuestions)}
-        onRestart={restartQuiz}
-      />
-    );
-  }
-  
-  return (
-    <div className="w-full max-w-4xl mx-auto p-4">
-      <div className="flex justify-center mb-8">
-        <QuestionCard 
-          question={questions[quizState.currentQuestionIndex]}
-          selectedOption={quizState.answers[quizState.currentQuestionIndex]}
-          onSelectOption={handleSelectOption}
-          onNextQuestion={handleNextQuestion}
-          showFeedback={quizState.showFeedback}
-          questionNumber={quizState.currentQuestionIndex + 1}
-          totalQuestions={questions.length}
-        />
-      </div>
-    </div>
-  );
-}
 
-function QuizIntro({ onStart }: { onStart: () => void }) {
+  const changeDifficulty = (difficulty: QuestionDifficulty) => {
+    setState({
+      ...state,
+      difficulty
+    });
+  };
+
+  // Show the quiz setup screen if not started
+  if (!quizStarted) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+        <Navigation />
+        <div className="max-w-7xl mx-auto pt-24 px-4">
+          <Card className="w-full max-w-3xl mx-auto">
+            <CardHeader className="text-center">
+              <div className="mx-auto p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-full w-16 h-16 flex items-center justify-center mb-4">
+                <BrainCircuit className="h-8 w-8 text-indigo-600 dark:text-indigo-300" />
+              </div>
+              <CardTitle className="text-2xl md:text-3xl">AI-Generated Quiz</CardTitle>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">
+                Test your knowledge with personalized questions generated by our AI assistant
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Select Topic</label>
+                <Select value={selectedTopic} onValueChange={setSelectedTopic}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a topic" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {topicOptions.map(topic => (
+                      <SelectItem key={topic.id} value={topic.id}>{topic.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Difficulty Level</label>
+                <div className="flex gap-2 flex-wrap">
+                  {["easy", "intermediate", "advanced"].map((diff) => (
+                    <Button
+                      key={diff}
+                      variant={state.difficulty === diff ? "default" : "outline"}
+                      onClick={() => changeDifficulty(diff as QuestionDifficulty)}
+                      className="flex-1"
+                    >
+                      {diff.charAt(0).toUpperCase() + diff.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="pt-4">
+                <Button 
+                  onClick={startQuiz}
+                  disabled={isGeneratingQuestions}
+                  className="w-full"
+                  size="lg"
+                >
+                  {isGeneratingQuestions ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating Questions...
+                    </>
+                  ) : (
+                    "Start Quiz"
+                  )}
+                </Button>
+                <p className="text-xs text-center mt-3 text-gray-500 dark:text-gray-400">
+                  Our AI will generate 5 questions based on your selected topic
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show the results screen if the quiz is complete
+  if (state.result) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+        <Navigation />
+        <div className="max-w-7xl mx-auto pt-24 px-4">
+          <QuizResults 
+            result={state.result} 
+            onRestart={restartQuiz} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show the question screen
   return (
-    <div className="w-full max-w-3xl mx-auto p-4">
-      <Card className="shadow-lg animate-fade-in">
-        <CardHeader className="text-center pb-2">
-          <div className="mx-auto mb-4 p-3 rounded-full bg-primary/10 w-16 h-16 flex items-center justify-center">
-            <BrainCircuitIcon className="h-8 w-8 text-primary" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
+      <Navigation />
+      <div className="max-w-7xl mx-auto pt-24 px-4">
+        {isLoading ? (
+          <div className="w-full h-64 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
           </div>
-          <CardTitle className="text-3xl">AI Integration Concepts Quiz</CardTitle>
-          <p className="text-muted-foreground mt-2">
-            Test your knowledge of AI integration concepts, APIs, and best practices
-          </p>
-        </CardHeader>
-        
-        <CardContent className="space-y-4 text-center">
-          <div className="bg-muted/50 rounded-lg p-4">
-            <h3 className="font-medium mb-2">Quiz Features</h3>
-            <ul className="space-y-2 text-sm text-left max-w-md mx-auto">
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span>Adaptive difficulty based on your performance</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span>Detailed explanations for each question</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span>Performance analytics by category</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary"></span>
-                <span>Personalized resource recommendations</span>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="px-4">
-            <p className="text-sm text-muted-foreground">
-              Start with basic questions and work your way up to advanced topics as you demonstrate mastery.
-            </p>
-          </div>
-        </CardContent>
-        
-        <CardFooter className="flex justify-center pt-2 pb-6">
-          <Button onClick={onStart} size="lg">
-            Start Quiz
-          </Button>
-        </CardFooter>
-      </Card>
+        ) : (
+          <QuestionCard
+            question={currentQuestion}
+            selectedOption={selectedAnswer}
+            onSelectOption={handleSelectOption}
+            onNextQuestion={handleNextQuestion}
+            showFeedback={state.showFeedback}
+            questionNumber={state.currentQuestionIndex + 1}
+            totalQuestions={questions.length}
+          />
+        )}
+      </div>
     </div>
   );
 }

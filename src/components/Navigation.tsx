@@ -1,5 +1,5 @@
 
-import { Home, Target, BookOpen, Library, Users, LogOut, User, BrainCircuit } from "lucide-react";
+import { Home, Target, BookOpen, Library, Users, LogOut, User, BrainCircuit, Bot } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -58,6 +58,13 @@ export const Navigation = () => {
             >
               <BrainCircuit size={20} />
               <span className="hidden sm:inline">Quiz</span>
+            </Link>
+            <Link 
+              to="/ai-assistant" 
+              className="flex items-center space-x-1 hover:text-indigo-100 transition bg-purple-600 hover:bg-purple-700 px-2 py-1 rounded ml-1"
+            >
+              <Bot size={20} />
+              <span className="hidden sm:inline">AI Help</span>
             </Link>
           </div>
         </div>

@@ -36,7 +36,8 @@ export const sendMessageToAssistant = async (
         body: { 
           message: userMessage,
           userId,
-          history: messageHistory
+          history: messageHistory,
+          requestType: "chat"
         }
       });
       
@@ -111,4 +112,33 @@ export const sendMessageToAssistant = async (
   }
   
   throw lastError || new Error("Failed to get a response after multiple attempts");
+};
+
+export const generateQuizQuestion = async (topic: string) => {
+  console.log("Generating quiz question for topic:", topic);
+  
+  try {
+    const { data, error } = await supabase.functions.invoke("skill-assistant-gemini", {
+      method: "POST",
+      body: { 
+        requestType: "generateQuiz",
+        topic
+      }
+    });
+
+    if (error) {
+      console.error("Error generating quiz question:", error);
+      throw new Error(error.message || "Failed to generate quiz question");
+    }
+
+    if (!data || !data.question) {
+      throw new Error("Invalid response format from quiz generation");
+    }
+
+    return data.question;
+  } catch (error) {
+    console.error("Error in generateQuizQuestion:", error);
+    toast.error("Failed to generate quiz question. Please try again.");
+    throw error;
+  }
 };

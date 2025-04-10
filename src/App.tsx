@@ -17,6 +17,7 @@ import Resources from "./pages/Resources";
 import Collaborate from "./pages/Collaborate";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
+import AiAssistant from "./pages/AiAssistant";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -110,6 +111,14 @@ const App = () => {
                       element={
                         <ProtectedRoute>
                           <Quiz />
+                        </ProtectedRoute>
+                      }
+                    />
+                    <Route
+                      path="/ai-assistant"
+                      element={
+                        <ProtectedRoute>
+                          <AiAssistant />
                         </ProtectedRoute>
                       }
                     />

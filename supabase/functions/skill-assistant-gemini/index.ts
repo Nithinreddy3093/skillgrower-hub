@@ -39,14 +39,16 @@ serve(async (req) => {
       throw new Error("Invalid JSON in request body");
     });
     
-    const { message, userId, history = [] } = body;
+    const { message, userId, history = [], requestType = "chat", topic = "" } = body;
 
+    console.log("Request type:", requestType);
     console.log("Received message:", message);
     console.log("User ID:", userId);
     console.log("History length:", history.length);
+    console.log("Topic (if any):", topic);
 
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-      throw new Error("Message is required and must be a non-empty string");
+    if (!message && requestType === "chat" || typeof message !== 'string' || message.trim() === '') {
+      throw new Error("Message is required and must be a non-empty string for chat requests");
     }
 
     // Enhanced system message with more detailed training instructions for improved responses
@@ -84,26 +86,69 @@ serve(async (req) => {
       Your primary goal is to help users learn efficiently, overcome obstacles, make meaningful progress in their skill development, and have fun along the way!`
     };
 
-    // Process user history for better context
-    const recentHistory = history.slice(-8).map(msg => {
-      return {
-        role: msg.role,
-        parts: [{ text: msg.content }]
-      };
-    });
+    // Special quiz generation system message
+    const quizSystemMessage = {
+      role: "system",
+      content: `You are a university-level quiz generator specializing in computer science, engineering, and technical subjects. Create high-quality, challenging quiz questions that test deep understanding.
 
-    // Create message array with system message, recent chat history, and current user message
-    const messages = [
+      For this quiz question request, you must follow this strict JSON format:
       {
-        role: "user",
-        parts: [{ text: systemMessage.content }]
-      },
-      ...recentHistory,
-      {
-        role: "user",
-        parts: [{ text: message }]
+        "question": "The detailed question text",
+        "options": ["Option A", "Option B", "Option C", "Option D"],
+        "correctAnswer": 0, // Index of correct answer (0-3)
+        "explanation": "Detailed explanation of why the answer is correct",
+        "difficulty": "easy|intermediate|advanced",
+        "category": "The specific category this question belongs to"
       }
-    ];
+
+      Guidelines:
+      - Focus ONLY on the requested topic
+      - Create questions ranging from fundamentals to advanced concepts
+      - For programming topics, include code snippets when relevant
+      - Ensure all distractors (wrong answers) are plausible
+      - Provide a thorough, educational explanation
+      - Assign the appropriate difficulty level accurately
+      - Return ONLY valid JSON with all fields included - NO additional text`
+    };
+
+    let messages;
+    
+    if (requestType === "generateQuiz") {
+      console.log("Generating quiz question for topic:", topic);
+      
+      // For quiz generation requests, use a different prompt structure
+      messages = [
+        {
+          role: "user",
+          parts: [{ text: quizSystemMessage.content }]
+        },
+        {
+          role: "user",
+          parts: [{ text: `Generate one university-level quiz question about ${topic}. Make sure it's challenging but fair.` }]
+        }
+      ];
+    } else {
+      // Process user history for better context for chat requests
+      const recentHistory = history.slice(-8).map(msg => {
+        return {
+          role: msg.role,
+          parts: [{ text: msg.content }]
+        };
+      });
+
+      // Create message array with system message, recent chat history, and current user message
+      messages = [
+        {
+          role: "user",
+          parts: [{ text: systemMessage.content }]
+        },
+        ...recentHistory,
+        {
+          role: "user",
+          parts: [{ text: message }]
+        }
+      ];
+    }
 
     console.log("Calling Gemini API...");
     console.log("Using model: gemini-1.5-flash");
@@ -127,8 +172,8 @@ serve(async (req) => {
           body: JSON.stringify({
             contents: messages,
             generationConfig: {
-              temperature: 0.7,  // Increased for more creative responses
-              maxOutputTokens: 800,
+              temperature: requestType === "generateQuiz" ? 0.2 : 0.7,  // Lower temperature for quiz generation
+              maxOutputTokens: requestType === "generateQuiz" ? 1000 : 800,
               topK: 40,
               topP: 0.95
             },
@@ -192,6 +237,33 @@ serve(async (req) => {
         // Validate response content
         if (!aiResponse || aiResponse.trim() === "") {
           throw new Error("Empty response from AI");
+        }
+
+        // If this is a quiz generation request, try to parse the JSON response
+        if (requestType === "generateQuiz") {
+          try {
+            // Try to extract the JSON part from the response
+            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+            const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
+            
+            // Parse the JSON
+            const quizQuestion = JSON.parse(jsonStr);
+            
+            // Validate that we have all required fields
+            if (!quizQuestion.question || !quizQuestion.options || !quizQuestion.correctAnswer === undefined || 
+                !quizQuestion.explanation || !quizQuestion.difficulty || !quizQuestion.category) {
+              throw new Error("Generated quiz question is missing required fields");
+            }
+            
+            // Return the parsed quiz question
+            return new Response(
+              JSON.stringify({ question: quizQuestion }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          } catch (parseError) {
+            console.error("Error parsing quiz question response:", parseError);
+            throw new Error("Failed to generate a valid quiz question. Please try again.");
+          }
         }
 
         return new Response(
