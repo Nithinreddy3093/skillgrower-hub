@@ -42,8 +42,7 @@ serve(async (req) => {
     const { message, userId, history = [], requestType = "chat", topic = "" } = body;
 
     console.log("Request type:", requestType);
-    console.log("Received message:", message);
-    console.log("User ID:", userId);
+    console.log("User ID:", userId || "anonymous");
     console.log("History length:", history.length);
     console.log("Topic (if any):", topic);
 
@@ -114,7 +113,7 @@ serve(async (req) => {
         },
         {
           role: "user",
-          parts: [{ text: `Generate one university-level quiz question about ${topic}. Make sure it's challenging but fair.` }]
+          parts: [{ text: `Generate one university-level quiz question about ${topic}. Make sure it's challenging but fair. RETURN ONLY VALID JSON WITHOUT ANY ADDITIONAL TEXT.` }]
         }
       ];
     } else {
@@ -250,7 +249,7 @@ serve(async (req) => {
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           } catch (parseError) {
-            console.error("Error parsing quiz question response:", parseError);
+            console.error("Error parsing quiz question response:", parseError, aiResponse);
             throw new Error("Failed to generate a valid quiz question. Please try again.");
           }
         }
@@ -261,6 +260,7 @@ serve(async (req) => {
         );
       } catch (fetchError) {
         lastError = fetchError;
+        console.error("Error with Gemini API:", fetchError);
         
         // Only retry for certain errors
         if (fetchError.name === 'AbortError') {

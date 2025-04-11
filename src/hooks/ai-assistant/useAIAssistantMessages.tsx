@@ -50,8 +50,9 @@ export const useAIAssistantMessages = () => {
       timestamp: new Date(),
     };
     
-    // Use direct array value instead of a function for setMessages
-    setMessages([...messageState.messages, userMessage]);
+    // Add user message to chat
+    const updatedMessagesWithUser: ChatMessage[] = [...messageState.messages, userMessage];
+    setMessages(updatedMessagesWithUser);
     setPrompt("");
     setIsLoading(true);
     
@@ -61,42 +62,51 @@ export const useAIAssistantMessages = () => {
 
     try {
       const placeholderId = crypto.randomUUID();
-      // Create a new array directly rather than using a function
-      const updatedMessages: ChatMessage[] = [
-        ...messageState.messages,
-        userMessage,
-        {
-          id: placeholderId,
-          content: "",
-          role: "assistant",
-          timestamp: new Date(),
-        },
-      ];
-      setMessages(updatedMessages);
+      
+      // Add placeholder for assistant response
+      const assistantPlaceholder: ChatMessage = {
+        id: placeholderId,
+        content: "",
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      
+      const messagesWithPlaceholder: ChatMessage[] = [...updatedMessagesWithUser, assistantPlaceholder];
+      setMessages(messagesWithPlaceholder);
       setIsStreaming(true);
 
-      // Add console.log for debugging
+      // Debug logs to trace request
       console.log("Sending message:", trimmedPrompt);
       console.log("User ID:", user?.id);
       console.log("Message history length:", messageState.messages.length);
 
-      const response = await sendMessageToAssistant(trimmedPrompt, user?.id, messageState.messages);
+      // Explicitly handle the case where user is undefined
+      if (!user?.id) {
+        console.warn("User ID is undefined, using anonymous session");
+      }
+
+      // Call the API with more explicit error handling
+      const response = await sendMessageToAssistant(
+        trimmedPrompt, 
+        user?.id || 'anonymous', 
+        messageState.messages
+      );
       
-      console.log("Received response:", response ? "Response received" : "No response");
+      console.log("Response received:", response ? "Success" : "Empty");
       
       // Validate response content
       if (!response || response.trim() === "") {
         throw new Error("Empty response received from assistant");
       }
       
-      // Fix the TypeScript error by mapping to a new array instead of using a function
-      const messagesWithResponse = messageState.messages.map(msg => 
+      // Update the placeholder message with the actual response
+      const updatedMessages: ChatMessage[] = messagesWithPlaceholder.map(msg => 
         msg.id === placeholderId 
           ? { ...msg, content: response } 
           : msg
       );
-      setMessages(messagesWithResponse);
       
+      setMessages(updatedMessages);
       setIsStreaming(false);
       setRetryCount(0);
       
@@ -114,7 +124,6 @@ export const useAIAssistantMessages = () => {
           : "Network issue persists. Please try again later.";
           
         if (messageState.retryCount < 2) {
-          // Create a filtered array rather than using a function
           const filteredMessages = messageState.messages.filter(msg => msg.content !== "");
           setMessages(filteredMessages);
           setRetryCount(messageState.retryCount + 1);
@@ -141,16 +150,19 @@ export const useAIAssistantMessages = () => {
       
       toast.error(toastMessage);
       
-      // Create a new array directly with the error message
+      // Add error message to chat
+      const errorChatMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        content: errorMessage,
+        role: "assistant",
+        timestamp: new Date(),
+      };
+      
       const messagesWithError: ChatMessage[] = [
         ...messageState.messages.filter(msg => msg.content !== ""),
-        {
-          id: crypto.randomUUID(),
-          content: errorMessage,
-          role: "assistant",
-          timestamp: new Date(),
-        },
+        errorChatMessage
       ];
+      
       setMessages(messagesWithError);
     } finally {
       setIsLoading(false);

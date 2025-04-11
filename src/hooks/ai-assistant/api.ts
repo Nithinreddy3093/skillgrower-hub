@@ -8,7 +8,7 @@ const RETRY_DELAY = 1000; // milliseconds
 
 export const sendMessageToAssistant = async (
   userMessage: string, 
-  userId: string | undefined, 
+  userId: string, 
   history: ChatMessage[]
 ) => {
   console.log("Sending message to skill-assistant-gemini function");
@@ -31,6 +31,8 @@ export const sendMessageToAssistant = async (
         setTimeout(() => reject(new Error("Request timed out")), 30000); // Increased timeout to 30s
       });
 
+      console.log("Preparing request with message:", userMessage.substring(0, 50) + "...");
+
       const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
         method: "POST",
         body: { 
@@ -44,11 +46,15 @@ export const sendMessageToAssistant = async (
       // Race between the timeout and the actual request
       const response = await Promise.race([
         responsePromise,
-        timeoutPromise.then(() => {
-          throw new Error("Request timed out");
-        })
+        timeoutPromise
       ]) as any;
       
+      console.log("Response received:", response);
+      
+      if (!response) {
+        throw new Error("No response received from function");
+      }
+
       const { data, error } = response;
 
       if (error) {
@@ -127,9 +133,7 @@ export const generateQuizQuestion = async (topic: string) => {
 
     const response = await Promise.race([
       responsePromise,
-      timeoutPromise.then(() => {
-        throw new Error("Request timed out");
-      })
+      timeoutPromise
     ]) as any;
     
     const { data, error } = response;
@@ -143,6 +147,7 @@ export const generateQuizQuestion = async (topic: string) => {
       throw new Error("Invalid response format from quiz generation");
     }
 
+    console.log("Successfully generated quiz question:", data.question.question.substring(0, 30) + "...");
     return data.question;
   } catch (error: any) {
     console.error("Error in generateQuizQuestion:", error);
