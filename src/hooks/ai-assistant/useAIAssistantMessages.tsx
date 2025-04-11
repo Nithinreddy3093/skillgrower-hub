@@ -50,6 +50,7 @@ export const useAIAssistantMessages = () => {
       timestamp: new Date(),
     };
     
+    // Use direct array value instead of a function for setMessages
     setMessages([...messageState.messages, userMessage]);
     setPrompt("");
     setIsLoading(true);
@@ -60,7 +61,8 @@ export const useAIAssistantMessages = () => {
 
     try {
       const placeholderId = crypto.randomUUID();
-      setMessages([
+      // Create a new array directly rather than using a function
+      const updatedMessages: ChatMessage[] = [
         ...messageState.messages,
         userMessage,
         {
@@ -69,7 +71,8 @@ export const useAIAssistantMessages = () => {
           role: "assistant",
           timestamp: new Date(),
         },
-      ]);
+      ];
+      setMessages(updatedMessages);
       setIsStreaming(true);
 
       // Add console.log for debugging
@@ -86,11 +89,13 @@ export const useAIAssistantMessages = () => {
         throw new Error("Empty response received from assistant");
       }
       
-      setMessages(prev => prev.map(msg => 
+      // Fix the TypeScript error by mapping to a new array instead of using a function
+      const messagesWithResponse = messageState.messages.map(msg => 
         msg.id === placeholderId 
           ? { ...msg, content: response } 
           : msg
-      ));
+      );
+      setMessages(messagesWithResponse);
       
       setIsStreaming(false);
       setRetryCount(0);
@@ -109,8 +114,9 @@ export const useAIAssistantMessages = () => {
           : "Network issue persists. Please try again later.";
           
         if (messageState.retryCount < 2) {
-          // Remove empty message
-          setMessages(messageState.messages.filter(msg => msg.content !== ""));
+          // Create a filtered array rather than using a function
+          const filteredMessages = messageState.messages.filter(msg => msg.content !== "");
+          setMessages(filteredMessages);
           setRetryCount(messageState.retryCount + 1);
           
           // Try again after a short delay
@@ -135,7 +141,8 @@ export const useAIAssistantMessages = () => {
       
       toast.error(toastMessage);
       
-      setMessages([
+      // Create a new array directly with the error message
+      const messagesWithError: ChatMessage[] = [
         ...messageState.messages.filter(msg => msg.content !== ""),
         {
           id: crypto.randomUUID(),
@@ -143,7 +150,8 @@ export const useAIAssistantMessages = () => {
           role: "assistant",
           timestamp: new Date(),
         },
-      ]);
+      ];
+      setMessages(messagesWithError);
     } finally {
       setIsLoading(false);
       setIsStreaming(false);
