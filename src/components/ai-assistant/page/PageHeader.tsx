@@ -11,7 +11,7 @@ export const PageHeader = ({ clearConversation }: PageHeaderProps) => {
     <div className="p-6 bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-800 dark:to-purple-800 text-white flex items-center justify-between">
       <div className="flex items-center">
         <Bot className="mr-3" size={24} />
-        <h1 className="text-xl font-semibold">AI Learning Assistant</h1>
+        <h1 className="text-xl font-semibold">AI Learning Assistant Pro</h1>
       </div>
       <Button 
         variant="outline" 

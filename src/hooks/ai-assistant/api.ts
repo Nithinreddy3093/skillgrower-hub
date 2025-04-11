@@ -20,7 +20,7 @@ export const sendMessageToAssistant = async (
     try {
       // Provide better context by sending more message history
       const messageHistory = history
-        .slice(-8) // Increase context window to improve responses
+        .slice(-10) // Increased from 8 to 10 messages to improve context
         .map(m => ({ 
           role: m.role, 
           content: m.content 
@@ -28,7 +28,7 @@ export const sendMessageToAssistant = async (
 
       // Use a Promise.race with a timeout promise instead of AbortController
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 30000); // Increased timeout to 30s
+        setTimeout(() => reject(new Error("Request timed out")), 45000); // Increased timeout to 45s for more detailed responses
       });
 
       console.log("Preparing request with message:", userMessage.substring(0, 50) + "...");
