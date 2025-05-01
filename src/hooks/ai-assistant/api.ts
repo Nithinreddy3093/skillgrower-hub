@@ -122,6 +122,8 @@ export const generateQuizQuestion = async (topic: string) => {
       setTimeout(() => reject(new Error("Request timed out. The AI may be busy, please try again or use our backup questions.")), QUIZ_TIMEOUT);
     });
 
+    toast.info("Generating quiz question...", { duration: 3000 });
+
     const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
       method: "POST",
       body: { 
@@ -147,17 +149,21 @@ export const generateQuizQuestion = async (topic: string) => {
     }
 
     console.log("Successfully generated quiz question:", data.question.question.substring(0, 30) + "...");
+    toast.success("Quiz question generated successfully!");
     return data.question;
   } catch (error: any) {
     console.error("Error in generateQuizQuestion:", error);
     
     // Enhanced error handling with more specific messages
     if (error.message?.includes("timeout")) {
+      toast.error("Question generation timed out. Using backup questions.");
       throw new Error("Question generation timed out. The AI may be busy. Try again later or use backup questions.");
     } else if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
+      toast.error("AI service usage limit reached. Using backup questions.");
       throw new Error("AI service usage limit reached. Please try again later.");
     }
     
+    toast.error("Could not generate questions. Using backup questions.");
     throw error;
   }
 };

@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, Eye, EyeOff } from "lucide-react"; // Import eye icons
+import { Loader2, Eye, EyeOff } from "lucide-react"; 
 import { toast } from "sonner";
 
 const Login = () => {
@@ -43,9 +44,18 @@ const Login = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-6">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 p-6 rounded-lg shadow-xl space-y-6">
-        <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-          Sign in to your account
-        </h2>
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+            <span className="text-lg font-bold text-white">ST</span>
+          </div>
+          <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
+            Skill Tracker
+          </h2>
+          <p className="text-center text-sm text-gray-600 dark:text-gray-300">
+            Sign in to your account
+          </p>
+        </div>
+        
         <p className="text-center text-sm text-gray-600 dark:text-gray-300">
           Don't have an account?{" "}
           <Link 

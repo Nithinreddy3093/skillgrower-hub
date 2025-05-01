@@ -73,6 +73,7 @@ export const ChatInputArea = ({
         type="submit"
         disabled={isLoading || !prompt.trim()}
         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
+        onClick={() => submitMessage()}
       >
         {isLoading ? (
           <span className="flex items-center">

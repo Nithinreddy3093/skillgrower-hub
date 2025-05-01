@@ -40,17 +40,23 @@ const Register = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4 sm:px-6 lg:px-8 theme-transition">
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-gray-800 p-8 rounded-lg shadow-md">
-        <div>
+        <div className="flex flex-col items-center justify-center space-y-3">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 flex items-center justify-center">
+            <span className="text-lg font-bold text-white">ST</span>
+          </div>
           <h2 className="text-center text-3xl font-extrabold text-gray-900 dark:text-white">
-            Create your account
+            Skill Tracker
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
-            Or{" "}
-            <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
-              sign in to your account
-            </Link>
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+            Create your account
           </p>
         </div>
+        <p className="text-center text-sm text-gray-600 dark:text-gray-400">
+          Or{" "}
+          <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300">
+            sign in to your account
+          </Link>
+        </p>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>

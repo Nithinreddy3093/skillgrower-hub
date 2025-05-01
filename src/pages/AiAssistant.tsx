@@ -9,6 +9,7 @@ import { AsideTopics, Topic } from "@/components/ai-assistant/page/AsideTopics";
 import { AsideInfo } from "@/components/ai-assistant/page/AsideInfo";
 import { ChatMessages } from "@/components/ai-assistant/page/ChatMessages";
 import { ChatInputArea } from "@/components/ai-assistant/page/ChatInputArea";
+import { toast } from "sonner";
 
 export default function AiAssistant() {
   const {
@@ -38,14 +39,19 @@ export default function AiAssistant() {
   const handleSendMessage = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     
+    if (!prompt.trim()) {
+      toast.error("Please enter a message first");
+      return;
+    }
+    
     // Append the current topic as context to help provide more relevant answers
     const topicContext = activeTopic !== "general" 
       ? `[Topic: ${topics.find(t => t.id === activeTopic)?.name}] `
       : "";
     
     const enrichedPrompt = topicContext + prompt;
-    setPrompt(enrichedPrompt);
-    sendMessage(e);
+    sendMessage(undefined, enrichedPrompt);
+    setPrompt("");
   };
   
   const handleTopicChange = (topicId: string) => {

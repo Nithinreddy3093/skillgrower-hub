@@ -37,10 +37,11 @@ export const useAIAssistantMessages = () => {
     autoResizeTextarea(e.target);
   };
 
-  const sendMessage = async (e?: React.FormEvent) => {
+  const sendMessage = async (e?: React.FormEvent, overridePrompt?: string) => {
     if (e) e.preventDefault();
     
-    const trimmedPrompt = messageState.prompt.trim();
+    const messageContent = overridePrompt || messageState.prompt;
+    const trimmedPrompt = messageContent.trim();
     if (!trimmedPrompt || messageState.isLoading) return;
 
     const userMessage: ChatMessage = {
@@ -53,7 +54,12 @@ export const useAIAssistantMessages = () => {
     // Add user message to chat
     const updatedMessagesWithUser: ChatMessage[] = [...messageState.messages, userMessage];
     setMessages(updatedMessagesWithUser);
-    setPrompt("");
+    
+    // Only clear the prompt if we're not using an override
+    if (!overridePrompt) {
+      setPrompt("");
+    }
+    
     setIsLoading(true);
     
     if (inputRef.current) {
@@ -131,7 +137,7 @@ export const useAIAssistantMessages = () => {
           // Try again after a short delay
           toast.error(toastMessage);
           setTimeout(() => {
-            sendMessage();
+            sendMessage(undefined, trimmedPrompt);
           }, 1500);
           return;
         } else {
