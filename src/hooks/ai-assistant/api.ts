@@ -1,9 +1,12 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ChatMessage } from "./types";
 import { toast } from "sonner";
 
 const MAX_RETRIES = 2;
 const RETRY_DELAY = 1000; // milliseconds
+const CHAT_TIMEOUT = 60000; // 60 seconds for chat requests
+const QUIZ_TIMEOUT = 30000; // 30 seconds for quiz generation
 
 export const sendMessageToAssistant = async (
   userMessage: string, 
@@ -27,7 +30,7 @@ export const sendMessageToAssistant = async (
 
       // Use a Promise.race with a timeout promise
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 60000); // Increased timeout to 60s for more detailed responses
+        setTimeout(() => reject(new Error("Request timed out")), CHAT_TIMEOUT);
       });
 
       console.log("Preparing request with message:", userMessage);
@@ -114,9 +117,9 @@ export const generateQuizQuestion = async (topic: string) => {
   console.log("Generating quiz question for topic:", topic);
   
   try {
-    // Improved error handling with a timeout
+    // Use a more aggressive timeout for quiz generation (30s instead of 60s)
     const timeoutPromise = new Promise((_, reject) => {
-      setTimeout(() => reject(new Error("Request timed out")), 30000);
+      setTimeout(() => reject(new Error("Request timed out. The AI may be busy, please try again or use our backup questions.")), QUIZ_TIMEOUT);
     });
 
     const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
@@ -147,7 +150,14 @@ export const generateQuizQuestion = async (topic: string) => {
     return data.question;
   } catch (error: any) {
     console.error("Error in generateQuizQuestion:", error);
-    toast.error(error.message || "Failed to generate quiz question. Please try again.");
+    
+    // Enhanced error handling with more specific messages
+    if (error.message?.includes("timeout")) {
+      throw new Error("Question generation timed out. The AI may be busy. Try again later or use backup questions.");
+    } else if (error.message?.includes("quota") || error.message?.includes("rate limit")) {
+      throw new Error("AI service usage limit reached. Please try again later.");
+    }
+    
     throw error;
   }
 };

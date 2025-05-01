@@ -64,7 +64,11 @@ function createChatSystemMessage() {
     2. Ask questions that test understanding rather than mere recall
     3. Frame questions as "what would happen if..." scenarios to encourage applied thinking
     4. Include questions that relate to common edge cases or optimizations
-    5. Structure questions from foundational to advanced to help users gauge their understanding`
+    5. Structure questions from foundational to advanced to help users gauge their understanding
+    
+    VERY IMPORTANT: Always offer follow-up questions or learning paths at the end of your responses to encourage continued engagement and deeper learning.
+    
+    ESSENTIAL: For every complex concept explained, include at least one practical example and one challenging question that prompts the user to apply what they've learned in a new context.`
   };
 }
 
@@ -91,7 +95,9 @@ function createQuizSystemMessage() {
     - Ensure all distractors (wrong answers) are plausible
     - Provide a thorough, educational explanation
     - Assign the appropriate difficulty level accurately
-    - Return ONLY valid JSON with all fields included - NO additional text`
+    - Return ONLY valid JSON with all fields included - NO additional text
+    
+    VERY IMPORTANT: Respond QUICKLY and EFFICIENTLY. Focus on creating ONE well-crafted question without unnecessary elaboration. Keep your reasoning process minimal to reduce response time.`
   };
 }
 
@@ -107,7 +113,7 @@ function prepareMessages(message, history, topic, requestType) {
       },
       {
         role: "user",
-        parts: [{ text: `Generate one university-level quiz question about ${topic}. Make sure it's challenging but fair. RETURN ONLY VALID JSON WITHOUT ANY ADDITIONAL TEXT.` }]
+        parts: [{ text: `Generate one university-level quiz question about ${topic}. Make sure it's challenging but fair. RETURN ONLY VALID JSON WITHOUT ANY ADDITIONAL TEXT. Be concise and direct.` }]
       }
     ];
   }
@@ -146,7 +152,7 @@ async function callGeminiAPI(messages, requestType) {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
       
-      // Configure API request
+      // Configure API request - optimized params for faster responses
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
         method: "POST",
         headers: {
@@ -155,8 +161,8 @@ async function callGeminiAPI(messages, requestType) {
         body: JSON.stringify({
           contents: messages,
           generationConfig: {
-            temperature: requestType === "generateQuiz" ? 0.2 : 0.7,
-            maxOutputTokens: requestType === "generateQuiz" ? 1000 : 1500,
+            temperature: requestType === "generateQuiz" ? 0.1 : 0.7, // Lower temperature for quiz generation for consistency and speed
+            maxOutputTokens: requestType === "generateQuiz" ? 800 : 1500, // Reduced tokens for quiz to speed up generation
             topK: 40,
             topP: 0.95
           },
@@ -302,6 +308,9 @@ function createErrorResponse(error) {
     errorMessage = "Rate limit exceeded: " + errorMessage;
   } else if (errorMessage.includes("model")) {
     errorMessage = "Model issue: " + errorMessage;
+  } else if (errorMessage.includes("timeout") || error.name === 'AbortError') {
+    errorMessage = "Request timed out. Please try again with a shorter question or later.";
+    statusCode = 408;
   }
   
   return new Response(

@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { QuestionCard } from "@/components/quiz/QuizQuestion";
@@ -7,10 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuizQuestion, QuizState, QuestionDifficulty, ResourceSuggestion } from "@/components/quiz/types";
-import { Loader2, BrainCircuit, Trophy, Clock, ChevronRight } from "lucide-react";
+import { Loader2, BrainCircuit, Trophy, Clock, ChevronRight, AlertTriangle } from "lucide-react";
 import { generateQuizQuestion } from "@/hooks/ai-assistant/api";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getQuestionsByDifficulty } from "@/components/quiz/questions";
 
 const topicOptions = [
   { id: "dsa", name: "Data Structures & Algorithms" },
@@ -182,6 +183,9 @@ export default function Quiz() {
   const [quizStarted, setQuizStarted] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
+  const [useBackupQuestions, setUseBackupQuestions] = useState(false);
+  const [retryAttempt, setRetryAttempt] = useState(0);
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
   const currentQuestion = questions[state.currentQuestionIndex];
   const selectedAnswer = state.answers[state.currentQuestionIndex];
@@ -204,41 +208,113 @@ export default function Quiz() {
 
     setIsGeneratingQuestions(true);
     setGenerationProgress(0);
+    setGenerationError(null);
     const numQuestions = 5;
     const newQuestions: QuizQuestion[] = [];
     
     try {
+      // If we've already tried online generation and failed, use backup questions immediately
+      if (useBackupQuestions) {
+        useBackupQuestionsForQuiz();
+        return;
+      }
+
+      // Show a longer toast for the user to understand what's happening
+      toast.info("Generating personalized questions. This may take a moment...", {
+        duration: 5000,
+      });
+      
       for (let i = 0; i < numQuestions; i++) {
-        const question = await loadQuestion(topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic);
-        newQuestions.push({
-          ...question,
-          id: crypto.randomUUID()
-        });
-        
-        // Update progress after each question generation
-        const newProgress = Math.round(((i + 1) / numQuestions) * 100);
-        setGenerationProgress(newProgress);
-        toast.success(`Generated question ${i+1} of ${numQuestions}`);
+        try {
+          const question = await loadQuestion(topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic);
+          newQuestions.push({
+            ...question,
+            id: crypto.randomUUID()
+          });
+          
+          // Update progress after each question generation
+          const newProgress = Math.round(((i + 1) / numQuestions) * 100);
+          setGenerationProgress(newProgress);
+          toast.success(`Generated question ${i+1} of ${numQuestions}`);
+        } catch (error: any) {
+          console.error(`Error generating question ${i+1}:`, error);
+          
+          // If we get a timeout or network error, break the loop and use what we have or fallback
+          if (error.message?.includes("timeout") || error.message?.includes("network")) {
+            throw new Error("Question generation is taking too long. Using available questions.");
+          }
+          
+          // For other errors, try to continue with the next question
+          toast.error(`Skipping question ${i+1} due to an error. Continuing...`);
+        }
       }
       
-      setState({
-        currentQuestionIndex: 0,
-        answers: new Array(newQuestions.length).fill(null),
-        startTime: Date.now(),
-        endTime: null,
-        difficulty: state.difficulty,
-        correctStreak: 0,
-        showFeedback: false,
-        result: null
-      });
-      setQuestions(newQuestions);
-      setQuizStarted(true);
-    } catch (error) {
-      toast.error("Failed to generate quiz questions. Please try again.");
+      // If we have at least 3 questions, use them
+      if (newQuestions.length >= 3) {
+        finishQuizGeneration(newQuestions);
+        toast.success(`Generated ${newQuestions.length} questions successfully!`);
+      } else {
+        // If we don't have enough questions, use backup questions
+        throw new Error("Not enough questions were generated. Using backup questions.");
+      }
+    } catch (error: any) {
+      console.error("Failed to generate quiz questions:", error);
+      
+      // If this is our first attempt, try once more
+      if (retryAttempt === 0) {
+        setRetryAttempt(1);
+        toast.info("First attempt failed. Trying one more time...");
+        setTimeout(() => startQuiz(), 1000);
+        return;
+      }
+      
+      setGenerationError(error.message || "Failed to generate questions");
+      
+      // Use backup questions if we have any generated questions or if specifically requested
+      if (newQuestions.length > 0) {
+        finishQuizGeneration(newQuestions);
+        toast.warning(`Using ${newQuestions.length} generated questions. Some may be from our backup library.`);
+      } else {
+        useBackupQuestionsForQuiz();
+      }
     } finally {
       setIsGeneratingQuestions(false);
       setGenerationProgress(0);
+      setRetryAttempt(0);
     }
+  };
+  
+  // Function to use backup questions when AI generation fails
+  const useBackupQuestionsForQuiz = () => {
+    // Get backup questions from our local database based on selected difficulty
+    const backupQuestions = getQuestionsByDifficulty(state.difficulty).slice(0, 5);
+    
+    if (backupQuestions.length === 0) {
+      toast.error("No backup questions available for this difficulty level");
+      return;
+    }
+    
+    finishQuizGeneration(backupQuestions);
+    toast.info("Using our backup question library for this quiz", {
+      duration: 5000,
+    });
+    setUseBackupQuestions(true);
+  };
+  
+  // Common function to finalize quiz setup with questions
+  const finishQuizGeneration = (questions: QuizQuestion[]) => {
+    setState({
+      currentQuestionIndex: 0,
+      answers: new Array(questions.length).fill(null),
+      startTime: Date.now(),
+      endTime: null,
+      difficulty: state.difficulty,
+      correctStreak: 0,
+      showFeedback: false,
+      result: null
+    });
+    setQuestions(questions);
+    setQuizStarted(true);
   };
 
   const handleSelectOption = (optionIndex: number) => {
@@ -340,6 +416,12 @@ export default function Quiz() {
     return resourcesByTopic[selectedTopic] || resourcesByTopic.dsa;
   };
 
+  const handleRetry = () => {
+    setUseBackupQuestions(false);
+    setGenerationError(null);
+    startQuiz();
+  };
+
   if (!quizStarted) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pb-20">
@@ -356,6 +438,23 @@ export default function Quiz() {
               </p>
             </CardHeader>
             <CardContent className="space-y-6">
+              {generationError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    {generationError}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setGenerationError(null)} 
+                      className="ml-2"
+                    >
+                      Dismiss
+                    </Button>
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               <div>
                 <label className="text-sm font-medium mb-2 block">Select Topic</label>
                 <Select value={selectedTopic} onValueChange={setSelectedTopic}>
@@ -415,9 +514,22 @@ export default function Quiz() {
                   </div>
                 )}
                 
-                <p className="text-xs text-center mt-3 text-gray-500 dark:text-gray-400">
-                  Our AI will generate 5 questions based on your selected topic
-                </p>
+                {useBackupQuestions ? (
+                  <div className="mt-3 flex justify-center">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleRetry}
+                      className="text-xs"
+                    >
+                      Try AI generation again
+                    </Button>
+                  </div>
+                ) : (
+                  <p className="text-xs text-center mt-3 text-gray-500 dark:text-gray-400">
+                    Our AI will generate 5 questions based on your selected topic
+                  </p>
+                )}
               </div>
               
               <div className="bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
