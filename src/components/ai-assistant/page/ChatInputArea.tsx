@@ -70,10 +70,10 @@ export const ChatInputArea = ({
         disabled={isLoading}
       />
       <Button
-        type="submit"
+        type="button" // Changed from submit to button
         disabled={isLoading || !prompt.trim()}
         className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
-        onClick={() => submitMessage()}
+        onClick={() => submitMessage()} // Ensure click handler works
       >
         {isLoading ? (
           <span className="flex items-center">

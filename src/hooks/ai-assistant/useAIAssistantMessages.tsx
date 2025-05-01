@@ -42,7 +42,11 @@ export const useAIAssistantMessages = () => {
     
     const messageContent = overridePrompt || messageState.prompt;
     const trimmedPrompt = messageContent.trim();
-    if (!trimmedPrompt || messageState.isLoading) return;
+    
+    if (!trimmedPrompt || messageState.isLoading) {
+      console.log("Message empty or already loading, not sending");
+      return;
+    }
 
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -83,13 +87,8 @@ export const useAIAssistantMessages = () => {
 
       // Debug logs to trace request
       console.log("Sending message:", trimmedPrompt);
-      console.log("User ID:", user?.id);
+      console.log("User ID:", user?.id || 'anonymous');
       console.log("Message history length:", messageState.messages.length);
-
-      // Explicitly handle the case where user is undefined
-      if (!user?.id) {
-        console.warn("User ID is undefined, using anonymous session");
-      }
 
       // Call the API with more explicit error handling
       const response = await sendMessageToAssistant(
