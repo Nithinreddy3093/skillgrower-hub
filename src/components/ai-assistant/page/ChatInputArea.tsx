@@ -1,8 +1,9 @@
 
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Send } from "lucide-react";
 import { autoResizeTextarea } from "@/hooks/ai-assistant/utils";
+import { toast } from "sonner";
 
 interface ChatInputAreaProps {
   prompt: string;
@@ -19,17 +20,42 @@ export const ChatInputArea = ({
   handleSendMessage,
   setPrompt
 }: ChatInputAreaProps) => {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setPrompt(e.target.value);
     autoResizeTextarea(e.target);
   };
+  
+  // Auto-focus the textarea when component mounts or loading state changes
+  useEffect(() => {
+    if (textareaRef.current && !isLoading) {
+      setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+    }
+  }, [isLoading]);
+
+  const submitMessage = (e?: FormEvent) => {
+    if (e) {
+      e.preventDefault();
+    }
+    
+    if (!prompt.trim()) {
+      toast.error("Please enter a message first");
+      return;
+    }
+    
+    handleSendMessage(e);
+  };
 
   return (
     <form 
-      onSubmit={handleSendMessage}
+      onSubmit={submitMessage}
       className="border-t dark:border-gray-700 p-4 flex items-end gap-2"
     >
       <textarea
+        ref={textareaRef}
         value={prompt}
         onChange={handleTextareaChange}
         placeholder={`Ask about ${topicName}...`}
@@ -38,7 +64,7 @@ export const ChatInputArea = ({
         onKeyDown={(e) => {
           if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
-            handleSendMessage();
+            submitMessage();
           }
         }}
         disabled={isLoading}
@@ -46,7 +72,7 @@ export const ChatInputArea = ({
       <Button
         type="submit"
         disabled={isLoading || !prompt.trim()}
-        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+        className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md flex items-center gap-2"
       >
         {isLoading ? (
           <span className="flex items-center">
@@ -57,7 +83,10 @@ export const ChatInputArea = ({
             Processing...
           </span>
         ) : (
-          <Send size={18} />
+          <>
+            <Send size={18} />
+            <span>Send</span>
+          </>
         )}
       </Button>
     </form>

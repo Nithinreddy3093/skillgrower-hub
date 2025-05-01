@@ -11,7 +11,7 @@ const corsHeaders = {
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
 
 // Constants for error handling and retries
-const MAX_RETRIES = 2;
+const MAX_RETRIES = 3; // Increased from 2 to 3
 const RETRY_DELAY = 1000; // milliseconds
 
 serve(async (req) => {
@@ -50,7 +50,7 @@ serve(async (req) => {
       throw new Error("Message is required and must be a non-empty string for chat requests");
     }
 
-    // Enhanced system message with more detailed training instructions for improved responses
+    // Enhanced system message with even more detailed training instructions for improved responses
     const systemMessage = {
       role: "system",
       content: `You are SkillMaster Pro, an advanced educational AI assistant specialized in computer science and programming topics. Your primary goal is to help university students develop practical skills by providing expert-level assistance with technical concepts and problem-solving.
@@ -62,6 +62,12 @@ serve(async (req) => {
       - Cybersecurity (cryptography, network security, ethical hacking)
       - Artificial Intelligence (machine learning, neural networks, NLP)
       - Python Development (frameworks, packages, design patterns)
+      
+      Teaching Philosophy:
+      1. PRACTICAL OVER THEORETICAL - Focus on how concepts apply to real-world scenarios
+      2. INCREMENTAL LEARNING - Build knowledge step by step, establishing foundations before advanced topics
+      3. ACTIVE ENGAGEMENT - Promote learning by doing through coding challenges and exercises
+      4. CONTEXT-RICH EXPLANATIONS - Provide the "why" behind concepts, not just the "what" and "how"
       
       Interaction Guidelines:
       1. ANTICIPATE MISCONCEPTIONS - When explaining a concept, proactively address common misunderstandings
@@ -81,7 +87,14 @@ serve(async (req) => {
       - When explaining code, include relevant comments that highlight key concepts
       - For problem-solving, outline your approach before diving into implementation
       
-      Always maintain a supportive, encouraging tone while delivering precise, technically accurate information. Your goal is not just to answer questions but to develop the student's understanding and problem-solving abilities.`
+      Always maintain a supportive, encouraging tone while delivering precise, technically accurate information. Your goal is not just to answer questions but to develop the student's understanding and problem-solving abilities.
+      
+      When generating doubts or questions for users to consider:
+      1. Focus on conceptual gaps that often trip up students
+      2. Ask questions that test understanding rather than mere recall
+      3. Frame questions as "what would happen if..." scenarios to encourage applied thinking
+      4. Include questions that relate to common edge cases or optimizations
+      5. Structure questions from foundational to advanced to help users gauge their understanding`
     };
 
     // Special quiz generation system message
@@ -126,8 +139,8 @@ serve(async (req) => {
         }
       ];
     } else {
-      // Process user history for better context for chat requests - increased from 8 to 10 for better context
-      const recentHistory = history.slice(-10).map(msg => {
+      // Process user history for better context for chat requests
+      const recentHistory = history.slice(-15).map(msg => {
         return {
           role: msg.role,
           parts: [{ text: msg.content }]
@@ -159,7 +172,7 @@ serve(async (req) => {
       try {
         // Set up a safer timeout
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 seconds timeout
         
         // Call Gemini API with optimized parameters
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
@@ -170,8 +183,8 @@ serve(async (req) => {
           body: JSON.stringify({
             contents: messages,
             generationConfig: {
-              temperature: requestType === "generateQuiz" ? 0.2 : 0.6, // Slightly lower temperature for more focused responses
-              maxOutputTokens: requestType === "generateQuiz" ? 1000 : 1200, // Increased token limit for more detailed responses
+              temperature: requestType === "generateQuiz" ? 0.2 : 0.7, // Slightly higher temperature for more creative responses
+              maxOutputTokens: requestType === "generateQuiz" ? 1000 : 1500, // Increased token limit for more detailed responses
               topK: 40,
               topP: 0.95
             },

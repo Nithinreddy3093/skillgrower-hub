@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ChatMessage } from "./types";
 import { toast } from "sonner";
@@ -20,18 +19,18 @@ export const sendMessageToAssistant = async (
     try {
       // Provide better context by sending more message history
       const messageHistory = history
-        .slice(-10) // Increased from 8 to 10 messages to improve context
+        .slice(-15) // Increased from 10 to 15 messages for even better context
         .map(m => ({ 
           role: m.role, 
           content: m.content 
         }));
 
-      // Use a Promise.race with a timeout promise instead of AbortController
+      // Use a Promise.race with a timeout promise
       const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error("Request timed out")), 45000); // Increased timeout to 45s for more detailed responses
+        setTimeout(() => reject(new Error("Request timed out")), 60000); // Increased timeout to 60s for more detailed responses
       });
 
-      console.log("Preparing request with message:", userMessage.substring(0, 50) + "...");
+      console.log("Preparing request with message:", userMessage);
 
       const responsePromise = supabase.functions.invoke("skill-assistant-gemini", {
         method: "POST",
@@ -49,7 +48,7 @@ export const sendMessageToAssistant = async (
         timeoutPromise
       ]) as any;
       
-      console.log("Response received:", response);
+      console.log("Response received from API");
       
       if (!response) {
         throw new Error("No response received from function");
@@ -67,7 +66,6 @@ export const sendMessageToAssistant = async (
           throw new Error("AI service quota exceeded. Please try again later.");
         }
         
-        // Check for specific error types that might benefit from retrying
         if (error.message?.includes("timeout") || 
             error.message?.includes("network") || 
             error.message?.includes("rate limit")) {
@@ -91,13 +89,11 @@ export const sendMessageToAssistant = async (
       lastError = error;
       console.error("Error in sendMessageToAssistant:", error);
       
-      // Special handling for quota errors
       if (error.message?.includes("quota") || error.message?.includes("insufficient")) {
         console.error("API quota exceeded:", error);
         throw new Error("AI service quota exceeded. Please try again later.");
       }
       
-      // Only retry specific errors
       if (error.message?.includes("timeout") || error.message?.includes("network")) {
         if (retryCount < MAX_RETRIES) {
           console.log(`Retry attempt ${retryCount + 1}...`);
