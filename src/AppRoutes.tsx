@@ -1,7 +1,6 @@
 
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { AIAssistant as AIAssistantComponent } from "@/components/ai-assistant/AIAssistant";
 import { GlobalAIHelper } from "@/components/GlobalAIHelper";
 import Index from "./pages/Index";
 import Goals from "./pages/Goals";
@@ -73,7 +72,7 @@ const AppRoutes = () => {
           path="/ai-assistant"
           element={
             <ProtectedRoute>
-              <AIAssistantComponent />
+              <AIAssistant />
             </ProtectedRoute>
           }
         />
@@ -87,7 +86,6 @@ const AppRoutes = () => {
         />
         <Route path="*" element={<NotFound />} />
       </Routes>
-      <AIAssistantComponent />
       <GlobalAIHelper />
     </>
   );

@@ -17,11 +17,8 @@ export const MAX_TOKENS = 400; // Limit token generation to ensure faster respon
 
 // OpenAI configuration
 export const getOpenAIKey = () => {
-  const key = Deno.env.get('OPENAI_API_KEY');
-  if (!key) {
-    throw new Error("OpenAI API key is not configured");
-  }
-  return key;
+  // Using the provided API key
+  return "AIzaSyCNJMsu0Q7Fvarz-t3w5H6oREHbm5fnxBA";
 };
 
 // System message for the assistant - with optimized domain knowledge

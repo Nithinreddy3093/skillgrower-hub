@@ -50,10 +50,12 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <AuthProvider>
-            <IntroAnimation onComplete={handleIntroComplete}>
-              <AppRoutes />
-              <Toaster />
-            </IntroAnimation>
+            <TooltipProvider>
+              <IntroAnimation onComplete={handleIntroComplete}>
+                <AppRoutes />
+                <Toaster />
+              </IntroAnimation>
+            </TooltipProvider>
           </AuthProvider>
         </BrowserRouter>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
