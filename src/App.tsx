@@ -3,24 +3,11 @@ import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import { ProtectedRoute } from "./components/ProtectedRoute";
 import { IntroAnimation } from "./components/IntroAnimation";
-import Index from "./pages/Index";
-import Goals from "./pages/Goals";
-import Journal from "./pages/Journal";
-import Resources from "./pages/Resources";
-import Collaborate from "./pages/Collaborate";
-import Profile from "./pages/Profile";
-import Quiz from "./pages/Quiz";
-import AIAssistant from "./pages/AiAssistant";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import NotFound from "./pages/NotFound";
-import { AIAssistant as AIAssistantComponent } from "@/components/ai-assistant/AIAssistant";
-import { GlobalAIHelper } from "@/components/GlobalAIHelper";
+import AppRoutes from "./AppRoutes";
 // Import DevTools conditionally to avoid build issues
 import { lazy } from "react";
 const ReactQueryDevtools = lazy(() => 
@@ -61,84 +48,14 @@ function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <AuthProvider>
-          <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
             <IntroAnimation onComplete={handleIntroComplete}>
-              <Routes>
-                <Route path="/login" element={<Login />} />
-                <Route path="/register" element={<Register />} />
-                <Route
-                  path="/"
-                  element={
-                    <ProtectedRoute>
-                      <Index />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/goals"
-                  element={
-                    <ProtectedRoute>
-                      <Goals />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/journal"
-                  element={
-                    <ProtectedRoute>
-                      <Journal />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/resources"
-                  element={
-                    <ProtectedRoute>
-                      <Resources />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/collaborate"
-                  element={
-                    <ProtectedRoute>
-                      <Collaborate />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/quiz"
-                  element={
-                    <ProtectedRoute>
-                      <Quiz />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/ai-assistant"
-                  element={
-                    <ProtectedRoute>
-                      <AIAssistantComponent />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route
-                  path="/profile"
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  }
-                />
-                <Route path="*" element={<NotFound />} />
-              </Routes>
+              <AppRoutes />
               <Toaster />
-              <AIAssistantComponent />
-              <GlobalAIHelper />
             </IntroAnimation>
-          </BrowserRouter>
-        </AuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
         {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
       </QueryClientProvider>
     </ThemeProvider>
