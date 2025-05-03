@@ -35,20 +35,33 @@ export const sendMessageToAssistant = async (
       content: msg.content
     }));
     
-    // Call the edge function with timeout to ensure fast responses
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+    // Set up a timeout handle for manual abort
+    let timeoutId: number | undefined;
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = window.setTimeout(() => {
+        reject(new Error("Request timeout: The assistant is taking too long to respond"));
+      }, 10000); // 10 second timeout
+    });
     
-    const { data, error } = await supabase.functions.invoke('skill-assistant', {
+    // Call the edge function with timeout via Promise.race
+    const fetchPromise = supabase.functions.invoke('skill-assistant', {
       body: {
         message,
         userId,
         history: formattedHistory
-      },
-      signal: controller.signal,
+      }
     });
     
-    clearTimeout(timeoutId);
+    // Race between the fetch and the timeout
+    const { data, error } = await Promise.race([
+      fetchPromise,
+      timeoutPromise.catch(error => {
+        throw error;
+      })
+    ]) as typeof fetchPromise;
+    
+    // Clear timeout if we got here
+    if (timeoutId) clearTimeout(timeoutId);
     
     if (error) {
       console.error("Error from skill-assistant edge function:", error);
@@ -77,7 +90,7 @@ export const sendMessageToAssistant = async (
     console.error("Error in sendMessageToAssistant:", error);
     
     // Show user-friendly error toast
-    if (error.name === 'AbortError') {
+    if (error.name === 'AbortError' || error.message?.includes('timeout')) {
       toast.error("Response is taking too long. Please try again with a simpler question.");
     } else {
       toast.error("Could not connect to AI assistant. Please try again.");
@@ -103,7 +116,7 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
         message: `Generate a single quiz question about ${topic}. Make it challenging but fair.`,
         requestType: "generateQuiz",
         topic
-      },
+      }
     });
     
     if (error) {

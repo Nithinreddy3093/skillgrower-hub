@@ -1,9 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -21,7 +21,13 @@ import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 import { AIAssistant as AIAssistantComponent } from "@/components/ai-assistant/AIAssistant";
 import { GlobalAIHelper } from "@/components/GlobalAIHelper";
-import ReactQueryDevtools from "@tanstack/react-query-devtools";
+// Import DevTools conditionally to avoid build issues
+import { lazy } from "react";
+const ReactQueryDevtools = lazy(() => 
+  import('@tanstack/react-query-devtools').then(module => ({ 
+    default: module.ReactQueryDevtools 
+  }))
+);
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,11 +59,11 @@ function App() {
   };
 
   return (
-    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+    <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <BrowserRouter>
-            <IntroAnimation>
+            <IntroAnimation onComplete={handleIntroComplete}>
               <Routes>
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
@@ -133,7 +139,7 @@ function App() {
             </IntroAnimation>
           </BrowserRouter>
         </AuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+        {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
       </QueryClientProvider>
     </ThemeProvider>
   );
