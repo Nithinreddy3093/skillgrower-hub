@@ -43,50 +43,45 @@ export const sendMessageToAssistant = async (
       }, 10000); // 10 second timeout
     });
     
-    // Call the edge function with timeout via Promise.race
-    const fetchPromise = supabase.functions.invoke('skill-assistant', {
-      body: {
-        message,
-        userId,
-        history: formattedHistory
+    try {
+      // Call the edge function
+      const response = await Promise.race([
+        supabase.functions.invoke('skill-assistant', {
+          body: {
+            message,
+            userId,
+            history: formattedHistory
+          }
+        }),
+        timeoutPromise
+      ]);
+      
+      // Clear timeout if we got here
+      if (timeoutId) clearTimeout(timeoutId);
+      
+      if (!response || !response.data || !response.data.response) {
+        console.error("Invalid response from AI assistant:", response);
+        throw new Error("Received invalid response from AI assistant");
       }
-    });
-    
-    // Race between the fetch and the timeout
-    const { data, error } = await Promise.race([
-      fetchPromise,
-      timeoutPromise.catch(error => {
-        throw error;
-      })
-    ]) as typeof fetchPromise;
-    
-    // Clear timeout if we got here
-    if (timeoutId) clearTimeout(timeoutId);
-    
-    if (error) {
-      console.error("Error from skill-assistant edge function:", error);
-      throw new Error(`Failed to get AI response: ${error.message}`);
-    }
-    
-    if (!data || !data.response) {
-      console.error("Invalid response from AI assistant:", data);
-      throw new Error("Received invalid response from AI assistant");
-    }
-    
-    console.log("AI assistant response received:", data.response.slice(0, 50) + "...");
-    
-    // Cache the response for future similar questions
-    if (message.length > 5) {
-      responseCache.set(cacheKey, data.response);
-      // Limit cache size
-      if (responseCache.size > 100) {
-        const firstKey = responseCache.keys().next().value;
-        responseCache.delete(firstKey);
+      
+      console.log("AI assistant response received:", response.data.response.slice(0, 50) + "...");
+      
+      // Cache the response for future similar questions
+      if (message.length > 5) {
+        responseCache.set(cacheKey, response.data.response);
+        // Limit cache size
+        if (responseCache.size > 100) {
+          const firstKey = responseCache.keys().next().value;
+          responseCache.delete(firstKey);
+        }
       }
+      
+      return response.data.response;
+    } finally {
+      // Always clear the timeout
+      if (timeoutId) clearTimeout(timeoutId);
     }
-    
-    return data.response;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error in sendMessageToAssistant:", error);
     
     // Show user-friendly error toast
@@ -111,7 +106,7 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
     console.log("Generating quiz question for topic:", topic);
     
     // Call the edge function optimized for quiz generation (faster response)
-    const { data, error } = await supabase.functions.invoke('skill-assistant', {
+    const response = await supabase.functions.invoke('skill-assistant', {
       body: {
         message: `Generate a single quiz question about ${topic}. Make it challenging but fair.`,
         requestType: "generateQuiz",
@@ -119,25 +114,20 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
       }
     });
     
-    if (error) {
-      console.error("Error generating quiz question:", error);
-      throw new Error(`Failed to generate quiz question: ${error.message}`);
-    }
-    
-    if (!data || !data.question) {
-      console.error("Invalid response for quiz question:", data);
+    if (!response || !response.data || !response.data.question) {
+      console.error("Invalid response for quiz question:", response);
       throw new Error("Received invalid quiz question data");
     }
     
     // Providing a default structure in case the response isn't properly formatted
     const defaultQuestion: QuizQuestion = {
       id: crypto.randomUUID(),
-      question: data.question?.question || "What is the capital of France?",
-      options: data.question?.options || ["Paris", "London", "Berlin", "Madrid"],
-      correctAnswer: data.question?.correctAnswer || 0,
-      category: data.question?.category || "Computer Science",
-      difficulty: data.question?.difficulty || "intermediate",
-      explanation: data.question?.explanation || "Paris is the capital of France."
+      question: response.data.question?.question || "What is the capital of France?",
+      options: response.data.question?.options || ["Paris", "London", "Berlin", "Madrid"],
+      correctAnswer: response.data.question?.correctAnswer || 0,
+      category: response.data.question?.category || "Computer Science",
+      difficulty: response.data.question?.difficulty || "intermediate",
+      explanation: response.data.question?.explanation || "Paris is the capital of France."
     };
     
     console.log("Quiz question generated:", defaultQuestion.question);
