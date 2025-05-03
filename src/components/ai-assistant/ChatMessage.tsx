@@ -81,8 +81,11 @@ export const ChatMessage = ({ message, isStreaming = false }: ChatMessageProps) 
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             components={{
-              code({ node, inline, className, children, ...props }) {
-                return inline ? (
+              code({ className, children, ...props }) {
+                // Fix: Removed 'inline' property as it doesn't exist in the type
+                // Instead, we can check if the code is inline by examining the className or other properties
+                const isInlineCode = !className || !className.includes('language-');
+                return isInlineCode ? (
                   <code
                     className="bg-gray-200 dark:bg-gray-700 px-1 py-0.5 rounded text-xs"
                     {...props}
