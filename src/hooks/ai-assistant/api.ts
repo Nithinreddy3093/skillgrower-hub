@@ -35,7 +35,7 @@ export const sendMessageToAssistant = async (
       content: msg.content
     }));
     
-    // Set up a timeout handle for manual abort
+    // Set up a timeout promise for handling timeouts
     let timeoutId: number | undefined;
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = window.setTimeout(() => {
@@ -44,7 +44,7 @@ export const sendMessageToAssistant = async (
     });
     
     try {
-      // Call the edge function
+      // Call the edge function - using Promise.race to handle timeouts
       const response = await Promise.race([
         supabase.functions.invoke('skill-assistant', {
           body: {
