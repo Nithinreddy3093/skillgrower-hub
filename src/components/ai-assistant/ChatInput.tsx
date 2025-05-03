@@ -2,7 +2,7 @@
 import { Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { RefObject, FormEvent, ChangeEvent } from "react";
+import { RefObject, FormEvent, ChangeEvent, useEffect } from "react";
 
 interface ChatInputProps {
   prompt: string;
@@ -19,14 +19,21 @@ export const ChatInput = ({
   handleTextareaChange,
   sendMessage
 }: ChatInputProps) => {
+  // Auto focus the textarea when the component mounts
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [inputRef]);
+
   return (
     <form 
       onSubmit={(e) => {
         e.preventDefault();
         if (!prompt.trim()) return;
-        sendMessage();
+        sendMessage(e);
       }} 
-      className="p-3 border-t dark:border-gray-700 flex items-end gap-2"
+      className="p-3 border-t dark:border-gray-700 flex items-end gap-2 sticky bottom-0 bg-white dark:bg-gray-800"
     >
       <textarea
         ref={inputRef}

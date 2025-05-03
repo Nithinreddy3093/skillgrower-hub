@@ -24,14 +24,28 @@ serve(async (req) => {
       throw new Error("Invalid JSON in request body");
     });
     
-    const { message, userId, history = [] } = body;
+    // Extract request parameters with defaults
+    const { 
+      message, 
+      userId, 
+      history = [], 
+      requestType = "chat", 
+      topic = ""
+    } = body;
 
+    console.log("Request type:", requestType);
     console.log("Received message:", message);
     console.log("User ID:", userId);
     console.log("History length:", history.length);
 
-    if (!message || typeof message !== 'string' || message.trim() === '') {
-      throw new Error("Message is required and must be a non-empty string");
+    // Apply different validation based on request type
+    if (requestType === "chat" && (!message || typeof message !== 'string' || message.trim() === '')) {
+      throw new Error("Message is required and must be a non-empty string for chat requests");
+    }
+    
+    if (requestType === "generateQuiz" && (!topic || typeof topic !== 'string')) {
+      console.log("Using message as topic for quiz generation");
+      // If topic is not provided but message is, use message as topic
     }
 
     // Implement retry logic
@@ -40,11 +54,36 @@ serve(async (req) => {
 
     while (retryCount <= MAX_RETRIES) {
       try {
-        // Process the message and get AI response
-        const aiResponse = await processUserMessage(message, userId, history);
+        // Process the message and get AI response based on request type
+        const aiResponse = await processUserMessage(
+          message, 
+          userId, 
+          history,
+          requestType
+        );
         
         console.log("OpenAI response received successfully");
         
+        // Handle quiz generation specially
+        if (requestType === "generateQuiz") {
+          try {
+            // Try to parse the response as JSON
+            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+            const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
+            
+            // Parse the question
+            const question = JSON.parse(jsonStr);
+            return new Response(
+              JSON.stringify({ question }),
+              { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          } catch (parseError) {
+            console.error("Error parsing quiz question:", parseError);
+            throw new Error("Failed to generate a valid quiz question");
+          }
+        }
+        
+        // Return normal chat response
         return new Response(
           JSON.stringify({ response: aiResponse }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } }

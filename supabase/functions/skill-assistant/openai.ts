@@ -1,22 +1,24 @@
 
-import { corsHeaders, getOpenAIKey, getSystemMessage } from "./config.ts";
+import { corsHeaders, getOpenAIKey, getSystemMessage, getQuizSystemMessage, REQUEST_TIMEOUT, MAX_TOKENS } from "./config.ts";
 
 // Process user messages and get AI response
-export async function processUserMessage(message: string, userId: string, history: any[] = []) {
+export async function processUserMessage(message: string, userId: string, history: any[] = [], requestType = "chat") {
   try {
     // Format conversation history for API
     const recentHistory = history.slice(-5);
     
     const messages = [
-      getSystemMessage(),
+      requestType === "generateQuiz" ? getQuizSystemMessage() : getSystemMessage(),
       ...recentHistory,
       { role: "user", content: message }
     ];
 
-    console.log("Using model: gpt-4o");
+    // Use appropriate model based on request type
+    const model = requestType === "generateQuiz" ? "gpt-4o-mini" : "gpt-4o";
+    console.log(`Using model: ${model} for ${requestType} request`);
     
     // Call OpenAI API
-    const response = await callOpenAI(messages);
+    const response = await callOpenAI(messages, model, requestType);
     
     return response;
   } catch (error) {
@@ -25,12 +27,16 @@ export async function processUserMessage(message: string, userId: string, histor
   }
 }
 
-// Call the OpenAI API with retry logic
-export async function callOpenAI(messages: any[], retryCount = 0) {
+// Call the OpenAI API with retry logic and optimized parameters
+export async function callOpenAI(messages: any[], model = "gpt-4o", requestType = "chat") {
   try {
     // Set up a timeout for the request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
+    
+    // Optimize parameters based on request type
+    const temperature = requestType === "generateQuiz" ? 0.2 : 0.5;
+    const maxTokens = requestType === "generateQuiz" ? 300 : MAX_TOKENS;
     
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
@@ -39,14 +45,14 @@ export async function callOpenAI(messages: any[], retryCount = 0) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "gpt-4o",
+        model,
         messages,
-        temperature: 0.2,
-        max_tokens: 300,
+        temperature,
+        max_tokens: maxTokens,
         presence_penalty: 0.2,
         frequency_penalty: 0.5,
         top_p: 0.95,
-        timeout: 30
+        timeout: REQUEST_TIMEOUT
       }),
       signal: controller.signal
     });

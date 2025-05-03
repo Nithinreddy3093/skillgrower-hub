@@ -4,6 +4,16 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { QuizQuestion } from "@/components/quiz/types";
 
+// Cache to prevent repetitive questions from the server
+const responseCache = new Map<string, string>();
+
+/**
+ * Send a message to the AI assistant and get a response
+ * @param message User message
+ * @param userId User identifier
+ * @param history Previous conversation history
+ * @returns Promise with AI response text
+ */
 export const sendMessageToAssistant = async (
   message: string,
   userId: string,
@@ -12,20 +22,33 @@ export const sendMessageToAssistant = async (
   try {
     console.log("Sending message to assistant:", message);
     
+    // Check cache for similar questions to prevent repetition
+    const cacheKey = `${message.toLowerCase().trim()}-${history.length}`;
+    if (responseCache.has(cacheKey)) {
+      console.log("Using cached response");
+      return responseCache.get(cacheKey) as string;
+    }
+    
     // Convert history to format expected by API
     const formattedHistory = history.map(msg => ({
       role: msg.role,
       content: msg.content
     }));
     
-    // Call the edge function
+    // Call the edge function with timeout to ensure fast responses
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 sec timeout
+    
     const { data, error } = await supabase.functions.invoke('skill-assistant', {
       body: {
         message,
         userId,
         history: formattedHistory
       },
+      signal: controller.signal,
     });
+    
+    clearTimeout(timeoutId);
     
     if (error) {
       console.error("Error from skill-assistant edge function:", error);
@@ -38,12 +61,27 @@ export const sendMessageToAssistant = async (
     }
     
     console.log("AI assistant response received:", data.response.slice(0, 50) + "...");
+    
+    // Cache the response for future similar questions
+    if (message.length > 5) {
+      responseCache.set(cacheKey, data.response);
+      // Limit cache size
+      if (responseCache.size > 100) {
+        const firstKey = responseCache.keys().next().value;
+        responseCache.delete(firstKey);
+      }
+    }
+    
     return data.response;
   } catch (error) {
     console.error("Error in sendMessageToAssistant:", error);
     
     // Show user-friendly error toast
-    toast.error("Could not connect to AI assistant. Please try again.");
+    if (error.name === 'AbortError') {
+      toast.error("Response is taking too long. Please try again with a simpler question.");
+    } else {
+      toast.error("Could not connect to AI assistant. Please try again.");
+    }
     
     // Re-throw for further handling
     throw error;
@@ -59,11 +97,11 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
   try {
     console.log("Generating quiz question for topic:", topic);
     
-    // Call the edge function
+    // Call the edge function optimized for quiz generation (faster response)
     const { data, error } = await supabase.functions.invoke('skill-assistant', {
       body: {
         message: `Generate a single quiz question about ${topic}. Make it challenging but fair.`,
-        context: "quiz_generation",
+        requestType: "generateQuiz",
         topic
       },
     });

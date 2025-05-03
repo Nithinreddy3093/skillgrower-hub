@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { QuizQuestion } from './types';
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -30,9 +30,24 @@ export function QuestionCard({
 }: QuestionProps) {
   const isAnswered = selectedOption !== null;
   const isCorrect = isAnswered && selectedOption === question.correctAnswer;
+  const [isVisible, setIsVisible] = useState(false);
+  
+  // Animation for improved performance
+  useEffect(() => {
+    // Small delay for smoother transitions between questions
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+    }, 50);
+    return () => clearTimeout(timer);
+  }, [question.id]);
   
   return (
-    <Card className="w-full max-w-3xl animate-fade-in">
+    <Card 
+      className={cn(
+        "w-full max-w-3xl transition-opacity duration-300",
+        isVisible ? "opacity-100" : "opacity-0"
+      )}
+    >
       <CardHeader className="space-y-2">
         <div className="flex justify-between items-center">
           <Badge variant={getDifficultyVariant(question.difficulty)} className="mb-2">

@@ -22,6 +22,13 @@ export const useAIAssistantMessages = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const { user } = useAuth();
 
+  // Auto-scroll effect
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messageState.messages]);
+
   // Focus the input field whenever needed
   useEffect(() => {
     if (inputRef.current && !messageState.isLoading) {
@@ -55,11 +62,11 @@ export const useAIAssistantMessages = () => {
       timestamp: new Date(),
     };
     
-    // Add user message to chat
+    // Add user message to chat immediately
     const updatedMessagesWithUser: ChatMessage[] = [...messageState.messages, userMessage];
     setMessages(updatedMessagesWithUser);
     
-    // Only clear the prompt if we're not using an override
+    // Clear the input field immediately
     if (!overridePrompt) {
       setPrompt("");
     }
@@ -73,7 +80,7 @@ export const useAIAssistantMessages = () => {
     try {
       const placeholderId = crypto.randomUUID();
       
-      // Add placeholder for assistant response
+      // Add placeholder for assistant response immediately
       const assistantPlaceholder: ChatMessage = {
         id: placeholderId,
         content: "",
@@ -115,6 +122,11 @@ export const useAIAssistantMessages = () => {
       setIsStreaming(false);
       setRetryCount(0);
       
+      // Auto-scroll to the bottom
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
+      
     } catch (error: any) {
       console.error("Error in sendMessage:", error);
       
@@ -123,7 +135,7 @@ export const useAIAssistantMessages = () => {
       let toastMessage = "Unable to get response. Try a different question.";
       
       // Handle different error scenarios with appropriate messages
-      if (error.message?.includes("timeout") || error.message?.includes("network")) {
+      if (error.message?.includes("timeout") || error.message?.includes("network") || error.name === 'AbortError') {
         toastMessage = messageState.retryCount < 2 
           ? "Connection issue. Retrying..." 
           : "Network issue persists. Please try again later.";
@@ -169,6 +181,11 @@ export const useAIAssistantMessages = () => {
       ];
       
       setMessages(messagesWithError);
+      
+      // Auto-scroll to the bottom
+      if (messagesEndRef.current) {
+        messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+      }
     } finally {
       setIsLoading(false);
       setIsStreaming(false);

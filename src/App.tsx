@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -16,10 +15,13 @@ import Resources from "./pages/Resources";
 import Collaborate from "./pages/Collaborate";
 import Profile from "./pages/Profile";
 import Quiz from "./pages/Quiz";
-import AiAssistant from "./pages/AiAssistant";
+import AIAssistant from "./pages/AiAssistant";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
+import { AIAssistant as AIAssistantComponent } from "@/components/ai-assistant/AIAssistant";
+import { GlobalAIHelper } from "@/components/GlobalAIHelper";
+import ReactQueryDevtools from "@tanstack/react-query-devtools";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,7 +33,7 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
+function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [introComplete, setIntroComplete] = useState(false);
 
@@ -51,95 +53,90 @@ const App = () => {
   };
 
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
-          <QueryClientProvider client={queryClient}>
-            <TooltipProvider>
-              {showIntro && <IntroAnimation onComplete={handleIntroComplete} />}
-              
-              {introComplete && (
-                <>
-                  <Toaster />
-                  <Sonner />
-                  <Routes>
-                    <Route path="/login" element={<Login />} />
-                    <Route path="/register" element={<Register />} />
-                    <Route
-                      path="/"
-                      element={
-                        <ProtectedRoute>
-                          <Index />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/goals"
-                      element={
-                        <ProtectedRoute>
-                          <Goals />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/journal"
-                      element={
-                        <ProtectedRoute>
-                          <Journal />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/resources"
-                      element={
-                        <ProtectedRoute>
-                          <Resources />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/collaborate"
-                      element={
-                        <ProtectedRoute>
-                          <Collaborate />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/quiz"
-                      element={
-                        <ProtectedRoute>
-                          <Quiz />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/ai-assistant"
-                      element={
-                        <ProtectedRoute>
-                          <AiAssistant />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route
-                      path="/profile"
-                      element={
-                        <ProtectedRoute>
-                          <Profile />
-                        </ProtectedRoute>
-                      }
-                    />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                  {/* Removed AIAssistant component from here */}
-                </>
-              )}
-            </TooltipProvider>
-          </QueryClientProvider>
-        </ThemeProvider>
-      </AuthProvider>
-    </BrowserRouter>
+    <ThemeProvider defaultTheme="light" storageKey="ui-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <BrowserRouter>
+            <IntroAnimation>
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route
+                  path="/"
+                  element={
+                    <ProtectedRoute>
+                      <Index />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/goals"
+                  element={
+                    <ProtectedRoute>
+                      <Goals />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/journal"
+                  element={
+                    <ProtectedRoute>
+                      <Journal />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/resources"
+                  element={
+                    <ProtectedRoute>
+                      <Resources />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/collaborate"
+                  element={
+                    <ProtectedRoute>
+                      <Collaborate />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/quiz"
+                  element={
+                    <ProtectedRoute>
+                      <Quiz />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/ai-assistant"
+                  element={
+                    <ProtectedRoute>
+                      <AIAssistantComponent />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+              <Toaster />
+              <AIAssistantComponent />
+              <GlobalAIHelper />
+            </IntroAnimation>
+          </BrowserRouter>
+        </AuthProvider>
+        <ReactQueryDevtools initialIsOpen={false} />
+      </QueryClientProvider>
+    </ThemeProvider>
   );
-};
+}
 
 export default App;
