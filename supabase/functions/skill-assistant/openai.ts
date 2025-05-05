@@ -35,7 +35,7 @@ export async function callOpenAI(messages: any[], model = "gpt-4o", requestType 
     const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
     // Optimize parameters based on request type
-    const temperature = requestType === "generateQuiz" ? 0.2 : 0.5;
+    const temperature = requestType === "generateQuiz" ? 0.2 : 0.7;
     const maxTokens = requestType === "generateQuiz" ? 300 : MAX_TOKENS;
     
     const response = await fetch("https://api.openai.com/v1/chat/completions", {

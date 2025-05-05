@@ -40,7 +40,7 @@ export const sendMessageToAssistant = async (
     const timeoutPromise = new Promise<never>((_, reject) => {
       timeoutId = window.setTimeout(() => {
         reject(new Error("Request timeout: The assistant is taking too long to respond"));
-      }, 10000); // 10 second timeout
+      }, 12000); // 12 second timeout
     });
     
     try {

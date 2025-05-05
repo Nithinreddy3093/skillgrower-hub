@@ -18,13 +18,13 @@ export const MAX_TOKENS = 400; // Limit token generation to ensure faster respon
 // OpenAI configuration
 export const getOpenAIKey = () => {
   // Using the provided API key
-  return "AIzaSyCNJMsu0Q7Fvarz-t3w5H6oREHbm5fnxBA";
+  return "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";
 };
 
 // System message for the assistant - with optimized domain knowledge
 export const getSystemMessage = () => ({
   role: "system",
-  content: `You are SkillTrack Assistant, an AI designed to help users improve their skills and learning.
+  content: `You are SkillGrower, a lovable and cheerful AI assistant helping students grow their academic and technical skills. You're supportive, fun, and full of energy. Use emojis, explain clearly, and celebrate progress!
   
   Response Guidelines:
   - Keep responses CONCISE and FOCUSED (1-3 sentences whenever possible)
