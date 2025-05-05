@@ -46,17 +46,24 @@ export async function callOpenAI(messages: any[], model = "gpt-4o", requestType 
       console.log("Generating quiz with enhanced instructions");
       // Add or modify the first message to be more explicit for quiz generation
       if (messages[0].role === "system") {
-        messages[0].content += ` Create a single self-contained quiz question in valid JSON format with the following structure EXACTLY:
+        messages[0].content += `\n\nCREATE EXACTLY ONE DETAILED COMPUTER SCIENCE QUIZ QUESTION.
+        
+        Return ONLY valid JSON with this exact structure:
         {
-          "question": "The full question text here",
+          "question": "What is X?",
           "options": ["Option A", "Option B", "Option C", "Option D"],
-          "correctAnswer": 0, // Index of correct answer (0-3)
-          "category": "Computer Science", // Subject category
-          "difficulty": "intermediate", // easy, intermediate, or advanced
-          "explanation": "Explanation of why the answer is correct"
+          "correctAnswer": 0,
+          "category": "Computer Science",
+          "difficulty": "intermediate",
+          "explanation": "Explanation here"
         }
         
-        IMPORTANT: Return ONLY the JSON object, nothing else. Ensure it is complete and valid JSON.`;
+        CRITICAL INSTRUCTIONS:
+        1. The options MUST be meaningful and complete sentences or phrases, NOT placeholders
+        2. Options MUST be distinct and specific, not generic like "Concept A, B, C, D"
+        3. correctAnswer MUST be a number from 0-3 corresponding to the index of the correct option
+        4. Return ONLY the JSON object, nothing else
+        5. Ensure the JSON is valid and properly formatted`;
       }
     }
     
@@ -105,11 +112,18 @@ export async function callOpenAI(messages: any[], model = "gpt-4o", requestType 
         const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
         const parsedResponse = JSON.parse(jsonStr);
         
-        // Validate the quiz question structure
-        if (!parsedResponse.question || !Array.isArray(parsedResponse.options) || 
-            typeof parsedResponse.correctAnswer !== 'number' || !parsedResponse.explanation) {
+        // Validate the quiz question structure more strictly
+        if (!parsedResponse.question || 
+            !Array.isArray(parsedResponse.options) || 
+            parsedResponse.options.length !== 4 ||
+            parsedResponse.options.some(opt => !opt || opt.includes("Concept") || opt.length < 3) ||
+            typeof parsedResponse.correctAnswer !== 'number' || 
+            parsedResponse.correctAnswer < 0 || 
+            parsedResponse.correctAnswer > 3 ||
+            !parsedResponse.explanation) {
+          
           console.error("Invalid quiz question format:", parsedResponse);
-          throw new Error("Quiz question format is invalid");
+          throw new Error("Quiz question format is invalid or contains placeholder options");
         }
         
         // Return the validated JSON string

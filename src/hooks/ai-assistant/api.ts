@@ -105,10 +105,16 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
   try {
     console.log("Generating quiz question for topic:", topic);
     
+    // Create a specific prompt that forces proper question generation
+    const detailedPrompt = `Generate a detailed university-level quiz question about ${topic}. 
+    The question must have 4 distinct and specific answer options (not just placeholders like 'Concept A'). 
+    Each option should be a complete, meaningful phrase. 
+    Include the correct answer index (0-3) and a detailed explanation.`;
+    
     // Call the edge function optimized for quiz generation (faster response)
     const response = await supabase.functions.invoke('skill-assistant', {
       body: {
-        message: `Generate a detailed quiz question about ${topic}.`,
+        message: detailedPrompt,
         requestType: "generateQuiz",
         topic
       }
@@ -124,10 +130,22 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
     // Make sure the question has all required fields
     const question = response.data.question;
     
+    // Additional validation to ensure meaningful options
+    if (!Array.isArray(question.options) || 
+        question.options.length !== 4 ||
+        question.options.some(opt => 
+          !opt || 
+          opt.includes("Concept") || 
+          opt.length < 3
+        )) {
+      console.error("Generated question has invalid options:", question.options);
+      throw new Error("Generated question has placeholder or invalid options");
+    }
+    
     const validatedQuestion: QuizQuestion = {
       id: crypto.randomUUID(),
       question: question.question,
-      options: Array.isArray(question.options) ? question.options : ["Option A", "Option B", "Option C", "Option D"],
+      options: question.options,
       correctAnswer: typeof question.correctAnswer === 'number' ? question.correctAnswer : 0,
       category: question.category || "Computer Science",
       difficulty: question.difficulty || "intermediate",
@@ -142,15 +160,15 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
     // Show user-friendly error toast
     toast.error("Could not generate quiz question. Using backup question.");
     
-    // Return a fallback question that's better than the simple placeholder
+    // Return a fallback question with more meaningful options
     const fallbackQuestion: QuizQuestion = {
       id: crypto.randomUUID(),
       question: `What is a fundamental concept in ${topic}?`,
       options: [
         "Data abstraction and encapsulation", 
-        "Runtime polymorphism",
+        "Runtime polymorphism in object-oriented programming",
         "Memory management through reference counting", 
-        "Declarative programming paradigms"
+        "Declarative programming paradigms across languages"
       ],
       correctAnswer: 0,
       category: "Computer Science",

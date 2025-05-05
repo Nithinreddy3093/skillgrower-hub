@@ -47,8 +47,8 @@ export function getQuizSystemMessage() {
     When creating quiz questions:
     1. Create clear and unambiguous questions
     2. Provide 4 distinct answer options with exactly one correct answer
-    3. Include an explanation for why the correct answer is right
-    4. Make questions challenging but fair
+    3. Each option must be a complete, meaningful phrase (never use placeholders like "Concept A")
+    4. Include an explanation for why the correct answer is right
     5. Format the output as a valid JSON object
     6. Ensure the difficulty matches the requested level
     

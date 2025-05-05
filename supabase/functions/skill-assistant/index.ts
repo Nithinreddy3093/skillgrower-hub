@@ -59,21 +59,22 @@ serve(async (req) => {
         let processedMessage = message;
         if (requestType === "generateQuiz") {
           const quizTopic = topic || message;
-          processedMessage = `Create a single quiz question about "${quizTopic}" with the following requirements:
-          1. The question should be challenging but fair
+          processedMessage = `Create a single detailed quiz question about "${quizTopic}" with the following requirements:
+          1. The question should be challenging but fair for university students
           2. Provide exactly 4 distinct answer options (labeled A, B, C, D)
-          3. Indicate which option is correct (0-3 index)
-          4. Include a brief explanation of why the correct answer is right
-          5. Categorize the question (Computer Science, Data Structures, etc.)
-          6. Set difficulty level (easy, intermediate, or advanced)
-          7. Return ONLY valid JSON with this structure:
+          3. Each option MUST be a specific, complete, and meaningful phrase (NOT generic placeholders like "Concept A")
+          4. Indicate which option is correct (0-3 index)
+          5. Include a detailed explanation of why the correct answer is right
+          6. Categorize the question (Computer Science, Data Structures, etc.)
+          7. Set difficulty level (easy, intermediate, or advanced)
+          8. Return ONLY valid JSON with this structure:
           {
             "question": "What is X?",
-            "options": ["A", "B", "C", "D"],
+            "options": ["Specific option A", "Specific option B", "Specific option C", "Specific option D"],
             "correctAnswer": 0,
             "category": "Computer Science",
             "difficulty": "intermediate",
-            "explanation": "Explanation here"
+            "explanation": "Detailed explanation here"
           }`;
         }
         
@@ -96,11 +97,16 @@ serve(async (req) => {
             // Parse the question
             const question = JSON.parse(aiResponse);
             
-            // Add validation to ensure the question meets requirements
-            if (!question.question || !Array.isArray(question.options) || 
-                question.options.length !== 4 || typeof question.correctAnswer !== 'number' ||
+            // Add enhanced validation to ensure the question meets requirements
+            if (!question.question || 
+                !Array.isArray(question.options) || 
+                question.options.length !== 4 || 
+                question.options.some(opt => !opt || opt.includes("Concept") || opt.length < 3) ||
+                typeof question.correctAnswer !== 'number' ||
+                question.correctAnswer < 0 ||
+                question.correctAnswer > 3 ||
                 !question.explanation) {
-              throw new Error("Invalid quiz question format");
+              throw new Error("Invalid quiz question format or contains placeholder options");
             }
             
             return new Response(
