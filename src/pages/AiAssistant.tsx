@@ -50,7 +50,11 @@ export default function AiAssistant() {
       : "";
     
     const enrichedPrompt = topicContext + prompt;
-    sendMessage(undefined, enrichedPrompt);
+    
+    // Call the placeholder sendMessage function
+    sendMessage(e, enrichedPrompt);
+    
+    // Call the placeholder setPrompt function
     setPrompt("");
   };
   

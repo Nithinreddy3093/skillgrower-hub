@@ -13,11 +13,11 @@ export const useAIAssistant = () => {
     messagesEndRef: { current: null },
     inputRef: { current: null },
     setIsOpen: () => {},
-    setPrompt: () => {},
+    setPrompt: (_prompt: string) => {},
     toggleChat: () => {},
     minimizeChat: () => {},
     expandChat: () => {},
-    sendMessage: () => {},
+    sendMessage: (_event?: React.FormEvent, _customPrompt?: string) => {},
     clearConversation: () => {},
     handleTextareaChange: () => {},
   };
