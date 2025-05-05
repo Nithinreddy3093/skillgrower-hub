@@ -30,14 +30,15 @@ serve(async (req) => {
       userId, 
       history = [], 
       requestType = "chat", 
-      topic = ""
+      topic = "",
+      difficulty = "intermediate"
     } = body;
 
     console.log("Request type:", requestType);
-    console.log("Received message:", message);
+    console.log("Topic:", topic || message);
+    console.log("Difficulty:", difficulty);
     console.log("User ID:", userId);
     console.log("History length:", history.length);
-    console.log("Topic:", topic);
 
     // Apply different validation based on request type
     if (requestType === "chat" && (!message || typeof message !== 'string' || message.trim() === '')) {
@@ -45,7 +46,7 @@ serve(async (req) => {
     }
     
     if (requestType === "generateQuiz") {
-      console.log("Generating quiz question on topic:", topic || message);
+      console.log("Generating quiz question on topic:", topic || message, "with difficulty:", difficulty);
       // If topic is not provided but message is, use message as topic
     }
 
@@ -59,23 +60,7 @@ serve(async (req) => {
         let processedMessage = message;
         if (requestType === "generateQuiz") {
           const quizTopic = topic || message;
-          processedMessage = `Create a single detailed quiz question about "${quizTopic}" with the following requirements:
-          1. The question should be challenging but fair for university students
-          2. Provide exactly 4 distinct answer options (labeled A, B, C, D)
-          3. Each option MUST be a specific, complete, and meaningful phrase (NOT generic placeholders like "Concept A")
-          4. Indicate which option is correct (0-3 index)
-          5. Include a detailed explanation of why the correct answer is right
-          6. Categorize the question (Computer Science, Data Structures, etc.)
-          7. Set difficulty level (easy, intermediate, or advanced)
-          8. Return ONLY valid JSON with this structure:
-          {
-            "question": "What is X?",
-            "options": ["Specific option A", "Specific option B", "Specific option C", "Specific option D"],
-            "correctAnswer": 0,
-            "category": "Computer Science",
-            "difficulty": "intermediate",
-            "explanation": "Detailed explanation here"
-          }`;
+          processedMessage = quizTopic + (quizTopic.toLowerCase().includes(difficulty) ? "" : ` (${difficulty} difficulty)`);
         }
         
         // Process the message and get AI response based on request type
@@ -91,22 +76,29 @@ serve(async (req) => {
         // Handle quiz generation specially
         if (requestType === "generateQuiz") {
           try {
-            // Try to parse the response as JSON
+            // Parse the response as JSON
             console.log("Quiz generation response:", aiResponse.substring(0, 100) + "...");
             
             // Parse the question
             const question = JSON.parse(aiResponse);
             
-            // Add enhanced validation to ensure the question meets requirements
+            // Enhanced validation to ensure the question meets requirements
             if (!question.question || 
                 !Array.isArray(question.options) || 
                 question.options.length !== 4 || 
-                question.options.some(opt => !opt || opt.includes("Concept") || opt.length < 3) ||
+                question.options.some(opt => 
+                  !opt || 
+                  opt.includes("Concept") || 
+                  opt.includes("Option ") ||
+                  opt.length < 5
+                ) ||
                 typeof question.correctAnswer !== 'number' ||
                 question.correctAnswer < 0 ||
                 question.correctAnswer > 3 ||
                 !question.explanation) {
-              throw new Error("Invalid quiz question format or contains placeholder options");
+              
+              console.error("Generated question does not meet requirements:", question);
+              throw new Error("Generated question does not meet quality requirements");
             }
             
             return new Response(
@@ -130,7 +122,9 @@ serve(async (req) => {
         console.error(`Attempt ${retryCount + 1} failed:`, error.message);
         
         // Only retry for certain types of errors
-        if (error.message.includes("timeout") || error.message.includes("rate limit")) {
+        if (error.message.includes("timeout") || 
+            error.message.includes("rate limit") ||
+            error.message.includes("overloaded")) {
           if (retryCount < MAX_RETRIES) {
             console.log(`Retrying attempt ${retryCount + 1} after delay...`);
             retryCount++;
@@ -145,7 +139,7 @@ serve(async (req) => {
     }
     
     // If we got here, all retries failed
-    throw lastError || new Error("Failed to get a response after multiple attempts");
+    throw lastError || new Error("Failed to get response after multiple attempts");
     
   } catch (error) {
     return handleError(error);
