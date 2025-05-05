@@ -37,14 +37,15 @@ serve(async (req) => {
     console.log("Received message:", message);
     console.log("User ID:", userId);
     console.log("History length:", history.length);
+    console.log("Topic:", topic);
 
     // Apply different validation based on request type
     if (requestType === "chat" && (!message || typeof message !== 'string' || message.trim() === '')) {
       throw new Error("Message is required and must be a non-empty string for chat requests");
     }
     
-    if (requestType === "generateQuiz" && (!topic || typeof topic !== 'string')) {
-      console.log("Using message as topic for quiz generation");
+    if (requestType === "generateQuiz") {
+      console.log("Generating quiz question on topic:", topic || message);
       // If topic is not provided but message is, use message as topic
     }
 
@@ -54,9 +55,31 @@ serve(async (req) => {
 
     while (retryCount <= MAX_RETRIES) {
       try {
+        // For quiz generation, construct a more specific prompt
+        let processedMessage = message;
+        if (requestType === "generateQuiz") {
+          const quizTopic = topic || message;
+          processedMessage = `Create a single quiz question about "${quizTopic}" with the following requirements:
+          1. The question should be challenging but fair
+          2. Provide exactly 4 distinct answer options (labeled A, B, C, D)
+          3. Indicate which option is correct (0-3 index)
+          4. Include a brief explanation of why the correct answer is right
+          5. Categorize the question (Computer Science, Data Structures, etc.)
+          6. Set difficulty level (easy, intermediate, or advanced)
+          7. Return ONLY valid JSON with this structure:
+          {
+            "question": "What is X?",
+            "options": ["A", "B", "C", "D"],
+            "correctAnswer": 0,
+            "category": "Computer Science",
+            "difficulty": "intermediate",
+            "explanation": "Explanation here"
+          }`;
+        }
+        
         // Process the message and get AI response based on request type
         const aiResponse = await processUserMessage(
-          message, 
+          processedMessage, 
           userId, 
           history,
           requestType
@@ -68,17 +91,25 @@ serve(async (req) => {
         if (requestType === "generateQuiz") {
           try {
             // Try to parse the response as JSON
-            const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-            const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
+            console.log("Quiz generation response:", aiResponse.substring(0, 100) + "...");
             
             // Parse the question
-            const question = JSON.parse(jsonStr);
+            const question = JSON.parse(aiResponse);
+            
+            // Add validation to ensure the question meets requirements
+            if (!question.question || !Array.isArray(question.options) || 
+                question.options.length !== 4 || typeof question.correctAnswer !== 'number' ||
+                !question.explanation) {
+              throw new Error("Invalid quiz question format");
+            }
+            
             return new Response(
               JSON.stringify({ question }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           } catch (parseError) {
             console.error("Error parsing quiz question:", parseError);
+            console.error("Raw response:", aiResponse);
             throw new Error("Failed to generate a valid quiz question");
           }
         }

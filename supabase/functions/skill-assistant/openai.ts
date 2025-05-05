@@ -36,12 +36,34 @@ export async function callOpenAI(messages: any[], model = "gpt-4o", requestType 
     
     // Optimize parameters based on request type
     const temperature = requestType === "generateQuiz" ? 0.2 : 0.7;
-    const maxTokens = requestType === "generateQuiz" ? 300 : MAX_TOKENS;
+    const maxTokens = requestType === "generateQuiz" ? 1000 : MAX_TOKENS;
+    
+    const openAIKey = getOpenAIKey();
+    console.log("Using OpenAI key:", openAIKey.substring(0, 5) + "..." + openAIKey.substring(openAIKey.length - 5));
+    
+    // For quiz generation, add more specific system instruction
+    if (requestType === "generateQuiz") {
+      console.log("Generating quiz with enhanced instructions");
+      // Add or modify the first message to be more explicit for quiz generation
+      if (messages[0].role === "system") {
+        messages[0].content += ` Create a single self-contained quiz question in valid JSON format with the following structure EXACTLY:
+        {
+          "question": "The full question text here",
+          "options": ["Option A", "Option B", "Option C", "Option D"],
+          "correctAnswer": 0, // Index of correct answer (0-3)
+          "category": "Computer Science", // Subject category
+          "difficulty": "intermediate", // easy, intermediate, or advanced
+          "explanation": "Explanation of why the answer is correct"
+        }
+        
+        IMPORTANT: Return ONLY the JSON object, nothing else. Ensure it is complete and valid JSON.`;
+      }
+    }
     
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${getOpenAIKey()}`,
+        "Authorization": `Bearer ${openAIKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -74,6 +96,29 @@ export async function callOpenAI(messages: any[], model = "gpt-4o", requestType 
     }
     
     const aiResponse = data.choices[0].message.content;
+    
+    // For quiz generation, attempt to parse and validate the JSON
+    if (requestType === "generateQuiz") {
+      try {
+        // Try to extract JSON from the response
+        const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+        const jsonStr = jsonMatch ? jsonMatch[0] : aiResponse;
+        const parsedResponse = JSON.parse(jsonStr);
+        
+        // Validate the quiz question structure
+        if (!parsedResponse.question || !Array.isArray(parsedResponse.options) || 
+            typeof parsedResponse.correctAnswer !== 'number' || !parsedResponse.explanation) {
+          console.error("Invalid quiz question format:", parsedResponse);
+          throw new Error("Quiz question format is invalid");
+        }
+        
+        // Return the validated JSON string
+        return JSON.stringify(parsedResponse);
+      } catch (parseError) {
+        console.error("Failed to parse quiz JSON:", parseError, "Raw response:", aiResponse);
+        throw new Error("Failed to generate a valid quiz question: " + parseError.message);
+      }
+    }
     
     // Validate response content
     if (!aiResponse || aiResponse.trim() === "") {

@@ -108,7 +108,7 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
     // Call the edge function optimized for quiz generation (faster response)
     const response = await supabase.functions.invoke('skill-assistant', {
       body: {
-        message: `Generate a single quiz question about ${topic}. Make it challenging but fair.`,
+        message: `Generate a detailed quiz question about ${topic}.`,
         requestType: "generateQuiz",
         topic
       }
@@ -119,34 +119,43 @@ export const generateQuizQuestion = async (topic: string): Promise<QuizQuestion>
       throw new Error("Received invalid quiz question data");
     }
     
-    // Providing a default structure in case the response isn't properly formatted
-    const defaultQuestion: QuizQuestion = {
+    console.log("Quiz API response:", response.data);
+    
+    // Make sure the question has all required fields
+    const question = response.data.question;
+    
+    const validatedQuestion: QuizQuestion = {
       id: crypto.randomUUID(),
-      question: response.data.question?.question || "What is the capital of France?",
-      options: response.data.question?.options || ["Paris", "London", "Berlin", "Madrid"],
-      correctAnswer: response.data.question?.correctAnswer || 0,
-      category: response.data.question?.category || "Computer Science",
-      difficulty: response.data.question?.difficulty || "intermediate",
-      explanation: response.data.question?.explanation || "Paris is the capital of France."
+      question: question.question,
+      options: Array.isArray(question.options) ? question.options : ["Option A", "Option B", "Option C", "Option D"],
+      correctAnswer: typeof question.correctAnswer === 'number' ? question.correctAnswer : 0,
+      category: question.category || "Computer Science",
+      difficulty: question.difficulty || "intermediate",
+      explanation: question.explanation || "No explanation provided."
     };
     
-    console.log("Quiz question generated:", defaultQuestion.question);
-    return defaultQuestion;
+    console.log("Quiz question generated:", validatedQuestion.question);
+    return validatedQuestion;
   } catch (error) {
     console.error("Error in generateQuizQuestion:", error);
     
     // Show user-friendly error toast
     toast.error("Could not generate quiz question. Using backup question.");
     
-    // Return a fallback question
+    // Return a fallback question that's better than the simple placeholder
     const fallbackQuestion: QuizQuestion = {
       id: crypto.randomUUID(),
-      question: `What is a key concept in ${topic}?`,
-      options: ["Concept A", "Concept B", "Concept C", "Concept D"],
+      question: `What is a fundamental concept in ${topic}?`,
+      options: [
+        "Data abstraction and encapsulation", 
+        "Runtime polymorphism",
+        "Memory management through reference counting", 
+        "Declarative programming paradigms"
+      ],
       correctAnswer: 0,
       category: "Computer Science",
       difficulty: "intermediate",
-      explanation: "Concept A is fundamental to understanding this topic."
+      explanation: "Data abstraction and encapsulation are fundamental concepts in computer science that allow us to hide implementation details while exposing only necessary interfaces."
     };
     
     return fallbackQuestion;
