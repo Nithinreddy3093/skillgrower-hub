@@ -33,7 +33,7 @@ function App() {
   // Check if intro has been shown before in this session
   useEffect(() => {
     const hasSeenIntro = sessionStorage.getItem("hasSeenIntro");
-    if (hasSeenIntro) {
+    if (hasSeenIntro === "true") {
       setShowIntro(false);
       setIntroComplete(true);
     }
@@ -51,10 +51,17 @@ function App() {
         <BrowserRouter>
           <AuthProvider>
             <TooltipProvider>
-              <IntroAnimation onComplete={handleIntroComplete}>
-                <AppRoutes />
-                <Toaster />
-              </IntroAnimation>
+              {showIntro ? (
+                <IntroAnimation onComplete={handleIntroComplete}>
+                  <AppRoutes />
+                  <Toaster />
+                </IntroAnimation>
+              ) : (
+                <>
+                  <AppRoutes />
+                  <Toaster />
+                </>
+              )}
             </TooltipProvider>
           </AuthProvider>
         </BrowserRouter>
