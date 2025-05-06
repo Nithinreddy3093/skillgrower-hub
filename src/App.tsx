@@ -41,6 +41,7 @@ function App() {
 
   // Handle intro animation completion
   const handleIntroComplete = () => {
+    setShowIntro(false);
     setIntroComplete(true);
     sessionStorage.setItem("hasSeenIntro", "true");
   };
@@ -54,12 +55,6 @@ function App() {
               {showIntro ? (
                 <IntroAnimation onComplete={handleIntroComplete} />
               ) : (
-                <>
-                  <AppRoutes />
-                  <Toaster />
-                </>
-              )}
-              {introComplete && (
                 <>
                   <AppRoutes />
                   <Toaster />
