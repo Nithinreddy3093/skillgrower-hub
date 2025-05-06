@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QuizQuestion, QuizState, QuestionDifficulty, ResourceSuggestion } from "@/components/quiz/types";
 import { Loader2, BrainCircuit, Trophy, Clock, ChevronRight, AlertTriangle } from "lucide-react";
-import { generateQuizQuestion } from "@/hooks/ai-assistant/api";
+import { generateQuizQuestions } from "@/hooks/ai-assistant/api";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -190,16 +190,6 @@ export default function Quiz() {
   const currentQuestion = questions[state.currentQuestionIndex];
   const selectedAnswer = state.answers[state.currentQuestionIndex];
 
-  const loadQuestion = async (topic: string) => {
-    try {
-      const question = await generateQuizQuestion(topic);
-      return question;
-    } catch (error) {
-      console.error("Error loading question:", error);
-      throw error;
-    }
-  };
-
   const startQuiz = async () => {
     if (!selectedTopic) {
       toast.error("Please select a topic first");
@@ -209,8 +199,6 @@ export default function Quiz() {
     setIsGeneratingQuestions(true);
     setGenerationProgress(0);
     setGenerationError(null);
-    const numQuestions = 5;
-    const newQuestions: QuizQuestion[] = [];
     
     try {
       // If we've already tried online generation and failed, use backup questions immediately
@@ -224,57 +212,35 @@ export default function Quiz() {
         duration: 5000,
       });
       
-      for (let i = 0; i < numQuestions; i++) {
-        try {
-          const question = await loadQuestion(topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic);
-          newQuestions.push({
-            ...question,
-            id: crypto.randomUUID()
-          });
-          
-          // Update progress after each question generation
-          const newProgress = Math.round(((i + 1) / numQuestions) * 100);
-          setGenerationProgress(newProgress);
-          toast.success(`Generated question ${i+1} of ${numQuestions}`);
-        } catch (error: any) {
-          console.error(`Error generating question ${i+1}:`, error);
-          
-          // If we get a timeout or network error, break the loop and use what we have or fallback
-          if (error.message?.includes("timeout") || error.message?.includes("network")) {
-            throw new Error("Question generation is taking too long. Using available questions.");
-          }
-          
-          // For other errors, try to continue with the next question
-          toast.error(`Skipping question ${i+1} due to an error. Continuing...`);
+      // Set initial progress to show activity
+      setGenerationProgress(10);
+      
+      try {
+        // Generate all questions at once with our new endpoint
+        const topicName = topicOptions.find(t => t.id === selectedTopic)?.name || selectedTopic;
+        const generatedQuestions = await generateQuizQuestions(topicName, state.difficulty);
+        
+        // Update progress to completion
+        setGenerationProgress(100);
+        
+        if (generatedQuestions.length >= 3) {
+          finishQuizGeneration(generatedQuestions);
+          toast.success(`Generated ${generatedQuestions.length} questions successfully!`);
+        } else {
+          throw new Error("Not enough questions were generated. Using backup questions.");
         }
-      }
-      
-      // If we have at least 3 questions, use them
-      if (newQuestions.length >= 3) {
-        finishQuizGeneration(newQuestions);
-        toast.success(`Generated ${newQuestions.length} questions successfully!`);
-      } else {
-        // If we don't have enough questions, use backup questions
-        throw new Error("Not enough questions were generated. Using backup questions.");
-      }
-    } catch (error: any) {
-      console.error("Failed to generate quiz questions:", error);
-      
-      // If this is our first attempt, try once more
-      if (retryAttempt === 0) {
-        setRetryAttempt(1);
-        toast.info("First attempt failed. Trying one more time...");
-        setTimeout(() => startQuiz(), 1000);
-        return;
-      }
-      
-      setGenerationError(error.message || "Failed to generate questions");
-      
-      // Use backup questions if we have any generated questions or if specifically requested
-      if (newQuestions.length > 0) {
-        finishQuizGeneration(newQuestions);
-        toast.warning(`Using ${newQuestions.length} generated questions. Some may be from our backup library.`);
-      } else {
+      } catch (error: any) {
+        console.error("Failed to generate quiz questions:", error);
+        
+        // If this is our first attempt, try once more
+        if (retryAttempt === 0) {
+          setRetryAttempt(1);
+          toast.info("First attempt failed. Trying one more time...");
+          setTimeout(() => startQuiz(), 1000);
+          return;
+        }
+        
+        setGenerationError(error.message || "Failed to generate questions");
         useBackupQuestionsForQuiz();
       }
     } finally {
@@ -403,6 +369,8 @@ export default function Quiz() {
       showFeedback: false,
       result: null
     });
+    // Reset useBackupQuestions to allow trying AI generation again
+    setUseBackupQuestions(false);
   };
 
   const changeDifficulty = (difficulty: QuestionDifficulty) => {
@@ -509,7 +477,7 @@ export default function Quiz() {
                   <div className="mt-4">
                     <Progress value={generationProgress} className="h-2" />
                     <p className="text-xs text-center mt-1 text-gray-500">
-                      {generationProgress}% - Generating question {Math.ceil(generationProgress / 20)} of 5
+                      {generationProgress}% - Generating your personalized quiz questions
                     </p>
                   </div>
                 )}

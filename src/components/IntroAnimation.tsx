@@ -3,14 +3,14 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 
 export interface IntroAnimationProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   duration?: number;
   onComplete?: () => void;
 }
 
 export const IntroAnimation = ({ 
   children,
-  duration = 3200, // Slightly longer duration for a more impactful animation
+  duration = 3000, 
   onComplete 
 }: IntroAnimationProps) => {
   const [show, setShow] = useState(true);

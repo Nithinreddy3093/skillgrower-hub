@@ -52,11 +52,14 @@ function App() {
           <AuthProvider>
             <TooltipProvider>
               {showIntro ? (
-                <IntroAnimation onComplete={handleIntroComplete}>
+                <IntroAnimation onComplete={handleIntroComplete} />
+              ) : (
+                <>
                   <AppRoutes />
                   <Toaster />
-                </IntroAnimation>
-              ) : (
+                </>
+              )}
+              {introComplete && (
                 <>
                   <AppRoutes />
                   <Toaster />

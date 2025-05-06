@@ -5,14 +5,14 @@ export const corsHeaders = {
 };
 
 // Constants for API requests
-export const REQUEST_TIMEOUT = 30000; // 30 seconds
+export const REQUEST_TIMEOUT = 30000; // 30 seconds for more complex requests
 export const MAX_TOKENS = 800;
 export const MAX_RETRIES = 2;
 export const RETRY_DELAY = 1000;
 
 // Get OpenAI API key from environment variables
 export function getOpenAIKey() {
-  const apiKey = Deno.env.get('OPENAI_API_KEY') || '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';
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
   if (!apiKey) {
     throw new Error('OPENAI_API_KEY is not set in environment variables');
   }
@@ -45,15 +45,16 @@ export function getQuizSystemMessage() {
     content: `You are an expert educational quiz creator specializing in computer science topics.
 
     When creating quiz questions:
-    1. Create clear, specific, and challenging questions
-    2. Provide EXACTLY 4 distinct answer options with exactly ONE correct answer
-    3. CRITICAL: Each option MUST be a complete, specific, and meaningful statement (NEVER use generic placeholders like "Concept A" or "Option B")
-    4. Each option should be 5-20 words and contain detailed technical information
-    5. Include a detailed explanation (3-5 sentences) for why the correct answer is right and why others are wrong
-    6. Make sure questions test understanding, not just memorization
-    7. Format output as valid JSON only
-    8. Ensure the difficulty matches the requested level (easy/intermediate/advanced)
-    9. Focus on practical, real-world applications when possible
+    1. Create 5 diverse, conceptually different questions about the topic
+    2. Each question must test a different aspect or sub-topic of the main topic
+    3. For each question, provide EXACTLY 4 distinct answer options with exactly ONE correct answer
+    4. CRITICAL: Each option MUST be a complete, specific, and meaningful statement (NEVER use generic placeholders like "Concept A" or "Option B")
+    5. Each option should be 5-25 words and contain detailed technical information
+    6. Include a detailed explanation (3-5 sentences) for why the correct answer is right and why others are wrong
+    7. Make sure questions test understanding, not just memorization
+    8. Format output as valid JSON with a "questions" array containing 5 question objects
+    9. Ensure the difficulty matches the requested level (easy/intermediate/advanced)
+    10. Include a diverse mix of question types (theory concepts, practical applications, problem-solving)
     
     Topics to focus on:
     - Data Structures & Algorithms (arrays, linked lists, trees, graphs, sorting, searching, complexity analysis)

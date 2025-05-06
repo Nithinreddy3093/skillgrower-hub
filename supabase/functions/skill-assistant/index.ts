@@ -46,7 +46,7 @@ serve(async (req) => {
     }
     
     if (requestType === "generateQuiz") {
-      console.log("Generating quiz question on topic:", topic || message, "with difficulty:", difficulty);
+      console.log("Generating quiz questions on topic:", topic || message, "with difficulty:", difficulty);
       // If topic is not provided but message is, use message as topic
     }
 
@@ -79,36 +79,46 @@ serve(async (req) => {
             // Parse the response as JSON
             console.log("Quiz generation response:", aiResponse.substring(0, 100) + "...");
             
-            // Parse the question
-            const question = JSON.parse(aiResponse);
+            // Parse the questions
+            const parsedResponse = JSON.parse(aiResponse);
             
-            // Enhanced validation to ensure the question meets requirements
-            if (!question.question || 
-                !Array.isArray(question.options) || 
-                question.options.length !== 4 || 
-                question.options.some(opt => 
-                  !opt || 
-                  opt.includes("Concept") || 
-                  opt.includes("Option ") ||
-                  opt.length < 5
-                ) ||
-                typeof question.correctAnswer !== 'number' ||
-                question.correctAnswer < 0 ||
-                question.correctAnswer > 3 ||
-                !question.explanation) {
-              
-              console.error("Generated question does not meet requirements:", question);
-              throw new Error("Generated question does not meet quality requirements");
+            // Check if we have the questions array
+            if (!parsedResponse.questions || !Array.isArray(parsedResponse.questions)) {
+              console.error("Invalid response format: Missing questions array");
+              throw new Error("Invalid response format from AI");
             }
             
+            // Enhanced validation to ensure the questions meet requirements
+            for (const [index, question] of parsedResponse.questions.entries()) {
+              if (!question.question || 
+                  !Array.isArray(question.options) || 
+                  question.options.length !== 4 || 
+                  question.options.some(opt => 
+                    !opt || 
+                    opt.includes("Concept") || 
+                    opt.includes("Option ") ||
+                    opt.length < 5
+                  ) ||
+                  typeof question.correctAnswer !== 'number' ||
+                  question.correctAnswer < 0 ||
+                  question.correctAnswer > 3 ||
+                  !question.explanation) {
+                
+                console.error(`Question ${index + 1} does not meet requirements:`, question);
+                throw new Error(`Question ${index + 1} does not meet quality requirements`);
+              }
+            }
+            
+            console.log(`Successfully validated ${parsedResponse.questions.length} quiz questions`);
+            
             return new Response(
-              JSON.stringify({ question }),
+              JSON.stringify({ questions: parsedResponse.questions }),
               { headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
           } catch (parseError) {
-            console.error("Error parsing quiz question:", parseError);
+            console.error("Error parsing quiz questions:", parseError);
             console.error("Raw response:", aiResponse);
-            throw new Error("Failed to generate a valid quiz question");
+            throw new Error("Failed to generate valid quiz questions");
           }
         }
         

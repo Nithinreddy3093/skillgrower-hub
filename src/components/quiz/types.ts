@@ -12,7 +12,12 @@ export type QuestionCategory =
   | "Web Development"
   | "Data Science"
   | "Cloud Computing"
-  | "Engineering";
+  | "Engineering"
+  | "Data Structures"
+  | "Algorithms"
+  | "Programming Languages"
+  | "Operating Systems"
+  | "System Architecture";
 
 export interface QuizQuestion {
   id: string;
