@@ -203,7 +203,7 @@ export const generateQuizQuestion = async (
           "Explicit memory management functions"
         ],
         correctAnswer: 0,
-        category: "Programming Languages",
+        category: "Computer Science",
         difficulty: difficulty,
         explanation: "Python uses indentation to denote code blocks instead of curly braces or keywords, which contributes significantly to its readability and clean syntax. This enforced indentation makes Python code consistent across different developers."
       };
@@ -218,7 +218,7 @@ export const generateQuizQuestion = async (
           "O(log n) when using a randomized pivot selection strategy"
         ],
         correctAnswer: 0,
-        category: "Algorithms",
+        category: "Computer Science",
         difficulty: difficulty,
         explanation: "Although quicksort has an average time complexity of O(n log n), its worst-case time complexity is O(n²) when the pivot selection consistently results in highly unbalanced partitions, such as when the array is already sorted and the first or last element is chosen as pivot."
       };
@@ -242,3 +242,4 @@ export const generateQuizQuestion = async (
     return fallbackQuestion;
   }
 };
+
