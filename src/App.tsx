@@ -30,20 +30,12 @@ function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [introComplete, setIntroComplete] = useState(false);
 
-  // Check if intro has been shown before in this session
-  useEffect(() => {
-    const hasSeenIntro = sessionStorage.getItem("hasSeenIntro");
-    if (hasSeenIntro === "true") {
-      setShowIntro(false);
-      setIntroComplete(true);
-    }
-  }, []);
+  // Removed the session storage check to ensure the intro shows on every refresh
 
   // Handle intro animation completion
   const handleIntroComplete = () => {
     setShowIntro(false);
     setIntroComplete(true);
-    sessionStorage.setItem("hasSeenIntro", "true");
   };
 
   return (
