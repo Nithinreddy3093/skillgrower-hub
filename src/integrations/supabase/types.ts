@@ -18,10 +18,14 @@ export type Database = {
         Row: {
           category: string
           created_at: string
+          current_value: number | null
           description: string
           id: string
+          is_completed: boolean | null
           progress: number
+          skill_id: string | null
           target_date: string
+          target_value: number | null
           title: string
           updated_at: string
           user_id: string
@@ -29,10 +33,14 @@ export type Database = {
         Insert: {
           category: string
           created_at?: string
+          current_value?: number | null
           description: string
           id?: string
+          is_completed?: boolean | null
           progress?: number
+          skill_id?: string | null
           target_date: string
+          target_value?: number | null
           title: string
           updated_at?: string
           user_id: string
@@ -40,45 +48,77 @@ export type Database = {
         Update: {
           category?: string
           created_at?: string
+          current_value?: number | null
           description?: string
           id?: string
+          is_completed?: boolean | null
           progress?: number
+          skill_id?: string | null
           target_date?: string
+          target_value?: number | null
           title?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "goals_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       journal_entries: {
         Row: {
           content: string
           created_at: string
+          date: string | null
+          goal_id: string | null
           id: string
           mood: string
+          reflection: string | null
           skills: string[]
+          title: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
           content: string
           created_at?: string
+          date?: string | null
+          goal_id?: string | null
           id?: string
           mood: string
+          reflection?: string | null
           skills: string[]
+          title?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
           content?: string
           created_at?: string
+          date?: string | null
+          goal_id?: string | null
           id?: string
           mood?: string
+          reflection?: string | null
           skills?: string[]
+          title?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "goals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -107,6 +147,112 @@ export type Database = {
           id?: string
           updated_at?: string
           username?: string | null
+        }
+        Relationships: []
+      }
+      quizzes: {
+        Row: {
+          completed_at: string
+          created_at: string
+          id: string
+          score: number
+          skill_id: string | null
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          score: number
+          skill_id?: string | null
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          created_at?: string
+          id?: string
+          score?: number
+          skill_id?: string | null
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quizzes_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      resources: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          skill_id: string | null
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          skill_id?: string | null
+          title: string
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          skill_id?: string | null
+          title?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resources_skill_id_fkey"
+            columns: ["skill_id"]
+            isOneToOne: false
+            referencedRelation: "skills"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      skills: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
